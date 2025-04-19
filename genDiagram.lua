@@ -314,6 +314,27 @@ dlg:button {
             return
         end
 
+        local args <const> = dlg.data
+        local diagOption <const> = args.diagOption
+            or defaults.diagOption --[[@as string]]
+        local xOffset <const> = args.xOffset
+            or defaults.xOffset --[[@as number]]
+        local yOffset <const> = args.yOffset
+            or defaults.yOffset --[[@as number]]
+        local strokeWeight <const> = args.strokeWeight
+            or defaults.strokeWeight --[[@as integer]]
+        local strokeColor <const> = args.strokeColor
+            or abgr32ToAseColor(defaults.strokeAbgr32) --[[@as Color]]
+        local useAntialias <const> = args.useAntialias --[[@as boolean]]
+
+        if strokeColor.alpha <= 0 then
+            app.alert {
+                title = "Error",
+                text = "Stroke color has zero alpha."
+            }
+            return
+        end
+
         local activeTool <const> = app.tool
         if activeTool.id == "slice" then
             app.tool = "hand"
@@ -342,27 +363,6 @@ dlg:button {
                 wSprite * wPixel,
                 hSprite * hPixel)
             // shortPixel
-
-        local args <const> = dlg.data
-        local diagOption <const> = args.diagOption
-            or defaults.diagOption --[[@as string]]
-        local xOffset <const> = args.xOffset
-            or defaults.xOffset --[[@as number]]
-        local yOffset <const> = args.yOffset
-            or defaults.yOffset --[[@as number]]
-        local strokeWeight <const> = args.strokeWeight
-            or defaults.strokeWeight --[[@as integer]]
-        local strokeColor <const> = args.strokeColor
-            or abgr32ToAseColor(defaults.strokeAbgr32) --[[@as Color]]
-        local useAntialias <const> = args.useAntialias --[[@as boolean]]
-
-        if strokeColor.alpha <= 0 then
-            app.alert {
-                title = "Error",
-                text = "Stroke color has zero alpha."
-            }
-            return
-        end
 
         local useAntialiasVerif <const> = useAntialias
             and colorMode ~= ColorMode.INDEXED
