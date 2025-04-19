@@ -372,7 +372,10 @@ dlg:button {
 
         local cos <const> = math.cos
         local sin <const> = math.sin
+
         local tau <const> = math.pi + math.pi
+        local phi <const> = (1 + math.sqrt(5)) / 2
+        local goldenAngle <const> = tau / (phi * phi)
 
         local gridName = "Layer"
         if diagOption == "POLAR_GRID" then
