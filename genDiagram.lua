@@ -285,8 +285,12 @@ dlg:button {
     text = "&OK",
     focus = true,
     onclick = function()
-        local sprite <const> = app.sprite
-        if not sprite then return end
+        local sprite = app.sprite
+        if not sprite then
+            sprite = Sprite(640, 360)
+            sprite.gridBounds = Rectangle(0, 0, 40, 40)
+            app.sprite = sprite
+        end
 
         local spriteSpec <const> = sprite.spec
         local colorMode <const> = spriteSpec.colorMode
