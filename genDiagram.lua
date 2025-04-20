@@ -52,31 +52,26 @@ local defaults <const> = {
 ---@param h number radius y
 ---@param strokeClr Color stroke color
 ---@param strokeWeight integer stroke weight
----@param useAntiAlias? boolean use antialias
+---@param useAntialias? boolean use antialias
 local function drawEllipse(
     context,
     xc, yc, w, h,
     strokeClr, strokeWeight,
-    useAntiAlias)
+    useAntialias)
     local useStrokeVerif <const> = strokeWeight > 0
         and strokeClr.alpha > 0
-    if (not useStrokeVerif) then
-        return
-    end
+    if (not useStrokeVerif) then return end
 
     local kw <const> = 0.5522847498307936 * w
     local kh <const> = 0.5522847498307936 * h
 
-    local xcVerif = useAntiAlias and xc or math.floor(xc)
-    local ycVerif = useAntiAlias and yc or math.floor(yc)
+    local xcVerif = useAntialias and xc or math.floor(xc)
+    local ycVerif = useAntialias and yc or math.floor(yc)
 
     local right <const> = xcVerif + w
     local left <const> = xcVerif - w
     local top <const> = ycVerif + h
     local bottom <const> = ycVerif - h
-
-    if useAntiAlias then context.antialias = true end
-    if useStrokeVerif then context.strokeWidth = strokeWeight end
 
     context:beginPath()
     context:moveTo(right, yc)
@@ -86,6 +81,7 @@ local function drawEllipse(
     context:cubicTo(xc + kw, bottom, right, yc - kh, right, yc)
     context:closePath()
 
+    context.strokeWidth = strokeWeight
     context.color = strokeClr
     context:stroke()
 end
@@ -97,26 +93,22 @@ end
 ---@param yd number y destination
 ---@param strokeClr Color stroke color
 ---@param strokeWeight integer stroke weight
----@param useAntiAlias? boolean use antialias
 local function drawLine(
     context,
     xo, yo, xd, yd,
-    strokeClr, strokeWeight,
-    useAntiAlias)
+    strokeClr, strokeWeight)
     local useStrokeVerif <const> = strokeWeight > 0
         and strokeClr.alpha > 0
     if (not useStrokeVerif) then
         return
     end
 
-    if useAntiAlias then context.antialias = true end
-    if useStrokeVerif then context.strokeWidth = strokeWeight end
-
     context:beginPath()
     context:moveTo(xo, yo)
     context:lineTo(xd, yd)
     context:closePath()
 
+    context.strokeWidth = strokeWeight
     context.color = strokeClr
     context:stroke()
 end
@@ -128,23 +120,20 @@ end
 ---@param h number radius y
 ---@param strokeClr Color stroke color
 ---@param strokeWeight integer stroke weight
----@param useAntiAlias? boolean use antialias
+---@param useAntialias? boolean use antialias
 local function drawRect(
     context,
     xc, yc, w, h,
     strokeClr, strokeWeight,
-    useAntiAlias)
+    useAntialias)
     local useStrokeVerif <const> = strokeWeight > 0
         and strokeClr.alpha > 0
     if (not useStrokeVerif) then
         return
     end
 
-    if useAntiAlias then context.antialias = true end
-    if useStrokeVerif then context.strokeWidth = strokeWeight end
-
-    local xcVerif = useAntiAlias and xc or math.floor(xc)
-    local ycVerif = useAntiAlias and yc or math.floor(yc)
+    local xcVerif = useAntialias and xc or math.floor(xc)
+    local ycVerif = useAntialias and yc or math.floor(yc)
 
     local right <const> = xcVerif + w
     local left <const> = xcVerif - w
@@ -158,6 +147,7 @@ local function drawRect(
     context:lineTo(left, bottom)
     context:closePath()
 
+    context.strokeWidth = strokeWeight
     context.color = strokeClr
     context:stroke()
 end
@@ -401,7 +391,6 @@ dlg:button {
         local wPixel <const> = math.max(1, math.abs(pixelRatio.width))
         local hPixel <const> = math.max(1, math.abs(pixelRatio.height))
         local shortPixel <const> = math.min(wPixel, hPixel)
-        local longPixel <const> = math.max(wPixel, hPixel)
 
         local xCorrect = 1
         local yCorrect = 1
@@ -421,13 +410,10 @@ dlg:button {
                 wSprite * wPixel,
                 hSprite * hPixel)
             // shortPixel
-        local longEdge <const> = math.max(
-                wSprite * wPixel,
-                hSprite * hPixel)
-            // longPixel
 
         local useAntialiasVerif <const> = useAntialias
             and colorMode ~= ColorMode.INDEXED
+        if useAntialiasVerif then context.antialias = true end
 
         local xCenter <const> = xSpriteCenter + xOffset
         local yCenter <const> = ySpriteCenter - yOffset
@@ -473,8 +459,7 @@ dlg:button {
                     context,
                     xo0, yo0,
                     xd0, yd0,
-                    strokeColor, strokeWeight,
-                    useAntialiasVerif)
+                    strokeColor, strokeWeight)
 
                 local xo1 <const> = xCenter + xOff - vx
                 local yo1 <const> = yCenter + yOff + vy
@@ -485,8 +470,7 @@ dlg:button {
                     context,
                     xo1, yo1,
                     xd1, yd1,
-                    strokeColor, strokeWeight,
-                    useAntialiasVerif)
+                    strokeColor, strokeWeight)
 
                 i = i + 1
             end
@@ -500,6 +484,9 @@ dlg:button {
             local halfEdge <const> = shortEdge * 0.5
             local wRect <const> = xCorrect * halfEdge * phi
             local hRect <const> = yCorrect * halfEdge
+
+            -- TODO: Warn if aspect ratio is less than phi and diagram
+            -- may not fit?
 
             -- TODO: Draw quarter arcs.
 
@@ -518,50 +505,43 @@ dlg:button {
             local top <const> = yCenter - hRect
             local bottom <const> = yCenter + hRect
 
-            -- Iter 1
+            -- There's no point in generalizing these to a for loop, in most
+            -- cases the canvas will be too small for more iterations than this
+            -- to be needed.
             local xConst1 <const> = left + wDiam * phiInv
             drawLine(
                 context,
                 xConst1, top,
                 xConst1, bottom,
-                strokeColor, strokeWeight,
-                useAntialiasVerif)
+                strokeColor, strokeWeight)
 
-            -- Iter 2
             local yConst2 <const> = top + hDiam * phiInv
             drawLine(
                 context,
                 xConst1, yConst2,
                 right, yConst2,
-                strokeColor, strokeWeight,
-                useAntialiasVerif)
+                strokeColor, strokeWeight)
 
-            -- Iter 3
             local xConst3 <const> = right - wDiam * phiInvE3
             drawLine(
                 context,
                 xConst3, yConst2,
                 xConst3, bottom,
-                strokeColor, strokeWeight,
-                useAntialiasVerif)
+                strokeColor, strokeWeight)
 
-            -- Iter 4
             local yConst4 <const> = bottom - hDiam * phiInvE3
             drawLine(
                 context,
                 xConst1, yConst4,
                 xConst3, yConst4,
-                strokeColor, strokeWeight,
-                useAntialiasVerif)
+                strokeColor, strokeWeight)
 
-            -- Iter 5
             local xConst5 <const> = xConst1 + wDiam * phiInvE5
             drawLine(
                 context,
                 xConst5, yConst2,
                 xConst5, yConst4,
-                strokeColor, strokeWeight,
-                useAntialiasVerif)
+                strokeColor, strokeWeight)
         elseif diagOption == "POLAR_GRID" then
             gridName = "Polar Grid"
 
@@ -625,8 +605,7 @@ dlg:button {
                     drawLine(
                         context,
                         xo, yo, xd, yd,
-                        strokeColor, strokeWeight,
-                        useAntialiasVerif)
+                        strokeColor, strokeWeight)
 
                     j = j + 1
                 end
@@ -638,29 +617,25 @@ dlg:button {
                 context,
                 0, hSprite / 3.0 - yOffset,
                 wSprite, hSprite / 3.0 - yOffset,
-                strokeColor, strokeWeight,
-                useAntialiasVerif)
+                strokeColor, strokeWeight)
 
             drawLine(
                 context,
                 0, hSprite * 2.0 / 3.0 - yOffset,
                 wSprite, hSprite * 2.0 / 3.0 - yOffset,
-                strokeColor, strokeWeight,
-                useAntialiasVerif)
+                strokeColor, strokeWeight)
 
             drawLine(
                 context,
                 wSprite / 3.0 + xOffset, 0,
                 wSprite / 3.0 + xOffset, hSprite,
-                strokeColor, strokeWeight,
-                useAntialiasVerif)
+                strokeColor, strokeWeight)
 
             drawLine(
                 context,
                 wSprite * 2.0 / 3.0 + xOffset, 0,
                 wSprite * 2.0 / 3.0 + xOffset, hSprite,
-                strokeColor, strokeWeight,
-                useAntialiasVerif)
+                strokeColor, strokeWeight)
         elseif diagOption == "SAND_RECKONER" then
             gridName = "Sand Reckoner"
 
@@ -685,15 +660,13 @@ dlg:button {
                         context,
                         x, yCenter - yRadius,
                         x, yCenter + yRadius,
-                        strokeColor, strokeWeight,
-                        useAntialiasVerif)
+                        strokeColor, strokeWeight)
 
                     drawLine(
                         context,
                         xCenter - xRadius, y,
                         xCenter + xRadius, y,
-                        strokeColor, strokeWeight,
-                        useAntialiasVerif)
+                        strokeColor, strokeWeight)
 
                     i = i + 1
                 end
@@ -712,57 +685,49 @@ dlg:button {
                 context,
                 xCenter, yCenter + yRadius,
                 xCenter + xRadius, yCenter - yRadius,
-                strokeColor, strokeWeight,
-                useAntialiasVerif)
+                strokeColor, strokeWeight)
 
             drawLine(
                 context,
                 xCenter, yCenter - yRadius,
                 xCenter + xRadius, yCenter + yRadius,
-                strokeColor, strokeWeight,
-                useAntialiasVerif)
+                strokeColor, strokeWeight)
 
             drawLine(
                 context,
                 xCenter, yCenter - yRadius,
                 xCenter - xRadius, yCenter + yRadius,
-                strokeColor, strokeWeight,
-                useAntialiasVerif)
+                strokeColor, strokeWeight)
 
             drawLine(
                 context,
                 xCenter + xRadius, yCenter,
                 xCenter - xRadius, yCenter + yRadius,
-                strokeColor, strokeWeight,
-                useAntialiasVerif)
+                strokeColor, strokeWeight)
 
             drawLine(
                 context,
                 xCenter + xRadius, yCenter,
                 xCenter - xRadius, yCenter - yRadius,
-                strokeColor, strokeWeight,
-                useAntialiasVerif)
+                strokeColor, strokeWeight)
 
             drawLine(
                 context,
                 xCenter, yCenter + yRadius,
                 xCenter - xRadius, yCenter - yRadius,
-                strokeColor, strokeWeight,
-                useAntialiasVerif)
+                strokeColor, strokeWeight)
 
             drawLine(
                 context,
                 xCenter - xRadius, yCenter,
                 xCenter + xRadius, yCenter + yRadius,
-                strokeColor, strokeWeight,
-                useAntialiasVerif)
+                strokeColor, strokeWeight)
 
             drawLine(
                 context,
                 xCenter - xRadius, yCenter,
                 xCenter + xRadius, yCenter - yRadius,
-                strokeColor, strokeWeight,
-                useAntialiasVerif)
+                strokeColor, strokeWeight)
         elseif diagOption == "SEED_OF_LIFE" then
             gridName = "Seed of Life"
 
@@ -814,7 +779,7 @@ dlg:button {
             local xRadius <const> = xCorrect * shortEdge * 0.5
             local yRadius <const> = yCorrect * shortEdge * 0.5
 
-            -- Center circle
+            -- TODO: Circle not needed? Make incircle a separate option?
             drawEllipse(
                 context,
                 xCenter, yCenter,
@@ -841,14 +806,12 @@ dlg:button {
                 drawLine(
                     context,
                     x0, y0, x1, y1,
-                    strokeColor, strokeWeight,
-                    useAntialiasVerif)
+                    strokeColor, strokeWeight)
 
                 drawLine(
                     context,
                     x0, y0, x2, y2,
-                    strokeColor, strokeWeight,
-                    useAntialiasVerif)
+                    strokeColor, strokeWeight)
 
                 i = i + 1
             end
