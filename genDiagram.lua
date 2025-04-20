@@ -50,6 +50,56 @@ local defaults <const> = {
 ---@param yc number center y
 ---@param w number radius x
 ---@param h number radius y
+---@param quadrant integer
+---@param strokeClr Color stroke color
+---@param strokeWeight integer stroke weight
+---@param useAntialias? boolean use antialias
+local function drawOrthoArc(
+    context,
+    xc, yc, w, h, quadrant,
+    strokeClr, strokeWeight,
+    useAntialias)
+    local useStrokeVerif <const> = strokeWeight > 0
+        and strokeClr.alpha > 0
+    if (not useStrokeVerif) then return end
+
+    local kw <const> = 0.5522847498307936 * w
+    local kh <const> = 0.5522847498307936 * h
+
+    local xcVerif = useAntialias and xc or math.floor(xc)
+    local ycVerif = useAntialias and yc or math.floor(yc)
+    local qVerif <const> = quadrant % 4
+
+    local right <const> = xcVerif + w
+    local left <const> = xcVerif - w
+    local top <const> = ycVerif + h
+    local bottom <const> = ycVerif - h
+
+    context:beginPath()
+    if qVerif == 3 then
+        context:moveTo(right, yc)
+        context:cubicTo(right, yc + kh, xc + kw, top, xc, top)
+    elseif qVerif == 2 then
+        context:moveTo(xc, top)
+        context:cubicTo(xc - kw, top, left, yc + kh, left, yc)
+    elseif qVerif == 1 then
+        context:moveTo(left, yc)
+        context:cubicTo(left, yc - kh, xc - kw, bottom, xc, bottom)
+    else
+        context:moveTo(xc, bottom)
+        context:cubicTo(xc + kw, bottom, right, yc - kh, right, yc)
+    end
+
+    context.strokeWidth = strokeWeight
+    context.color = strokeClr
+    context:stroke()
+end
+
+---@param context GraphicsContext canvas
+---@param xc number center x
+---@param yc number center y
+---@param w number radius x
+---@param h number radius y
 ---@param strokeClr Color stroke color
 ---@param strokeWeight integer stroke weight
 ---@param useAntialias? boolean use antialias
@@ -335,7 +385,6 @@ dlg:button {
         local sprite = app.sprite
         if not sprite then
             sprite = Sprite(640, 360)
-            sprite.gridBounds = Rectangle(0, 0, 40, 40)
             app.sprite = sprite
         end
 
@@ -479,8 +528,10 @@ dlg:button {
 
             local phi <const> = (1.0 + math.sqrt(5.0)) * 0.5
             local phiInv <const> = 1.0 / phi
-            local phiInvE3 <const> = phiInv ^ 3
-            local phiInvE5 <const> = phiInv ^ 5
+            local phiInvE2 <const> = phiInv * phiInv
+            local phiInvE3 <const> = phiInvE2 * phiInv
+            local phiInvE4 <const> = phiInvE3 * phiInv
+            local phiInvE5 <const> = phiInvE4 * phiInv
             local halfEdge <const> = shortEdge * 0.5
             local wRect <const> = xCorrect * halfEdge * phi
             local hRect <const> = yCorrect * halfEdge
@@ -514,6 +565,13 @@ dlg:button {
                 xConst1, top,
                 xConst1, bottom,
                 strokeColor, strokeWeight)
+            -- TODO: The radii will not scale correctly w/ pixel ratio.
+            drawOrthoArc(
+                context,
+                xConst1, bottom,
+                wDiam * phiInv, wDiam * phiInv, 1,
+                strokeColor, strokeWeight,
+                useAntialiasVerif)
 
             local yConst2 <const> = top + hDiam * phiInv
             drawLine(
@@ -521,6 +579,13 @@ dlg:button {
                 xConst1, yConst2,
                 right, yConst2,
                 strokeColor, strokeWeight)
+            -- TODO: The radii will not scale correctly w/ pixel ratio.
+            drawOrthoArc(
+                context,
+                xConst1, yConst2,
+                wDiam * phiInvE2, wDiam * phiInvE2, 0,
+                strokeColor, strokeWeight,
+                useAntialiasVerif)
 
             local xConst3 <const> = right - wDiam * phiInvE3
             drawLine(
@@ -552,6 +617,10 @@ dlg:button {
             local angOffsetDeg <const> = args.angOffsetDeg
                 or defaults.angOffsetDeg --[[@as integer]]
 
+            local invalRequest <const> = ringCount <= 0 and lineCount <= 0
+            local rcVerif = invalRequest and defaults.ringCount or ringCount
+            local lcVerif = invalRequest and defaults.lineCount or lineCount
+
             local angOffsetRad <const> = (useAntialiasVerif
                     and (angOffsetDeg == 26
                         or angOffsetDeg == 27))
@@ -559,21 +628,21 @@ dlg:button {
                 or math.rad(angOffsetDeg)
 
             local xMaxRadius <const> = xCorrect * shortEdge * 0.5
-            local xMinRadius <const> = ringCount ~= 0
-                and xMaxRadius / ringCount
+            local xMinRadius <const> = rcVerif ~= 0
+                and xMaxRadius / rcVerif
                 or xMaxRadius * 0.5
 
             local yMaxRadius <const> = yCorrect * shortEdge * 0.5
-            local yMinRadius <const> = ringCount ~= 0
-                and yMaxRadius / ringCount
+            local yMinRadius <const> = rcVerif ~= 0
+                and yMaxRadius / rcVerif
                 or yMaxRadius * 0.5
 
-            if ringCount > 0 then
-                local toFac <const> = ringCount ~= 1
-                    and 1.0 / (ringCount - 1.0)
+            if rcVerif > 0 then
+                local toFac <const> = rcVerif ~= 1
+                    and 1.0 / (rcVerif - 1.0)
                     or 1.0
                 local i = 0
-                while i < ringCount do
+                while i < rcVerif do
                     local t <const> = i * toFac
                     local u <const> = 1.0 - t
                     local xRadius <const> = u * xMinRadius
@@ -591,10 +660,10 @@ dlg:button {
                 end
             end
 
-            if lineCount > 0 then
+            if lcVerif > 0 then
                 local j = 0
-                while j < lineCount do
-                    local theta <const> = tau * j / lineCount - angOffsetRad
+                while j < lcVerif do
+                    local theta <const> = tau * j / lcVerif - angOffsetRad
                     local cosTheta <const> = cos(theta)
                     local sinTheta <const> = sin(theta)
                     local xo <const> = xCenter + 0 * cosTheta
