@@ -524,8 +524,7 @@ dlg:button {
                 local xd0 <const> = xCenter + xOff + vx
                 local yd0 <const> = yCenter - yOff + vy
 
-                drawLine(
-                    context,
+                drawLine(context,
                     xo0, yo0,
                     xd0, yd0,
                     strokeColor, strokeWeight)
@@ -535,8 +534,7 @@ dlg:button {
                 local xd1 <const> = xCenter + xOff + vx
                 local yd1 <const> = yCenter + yOff - vy
 
-                drawLine(
-                    context,
+                drawLine(context,
                     xo1, yo1,
                     xd1, yd1,
                     strokeColor, strokeWeight)
@@ -711,14 +709,12 @@ dlg:button {
                     local theta <const> = tau * j / lcVerif - angOffsetRad
                     local cosTheta <const> = cos(theta)
                     local sinTheta <const> = sin(theta)
-                    local xo <const> = xCenter + 0 * cosTheta
-                    local yo <const> = yCenter + 0 * sinTheta
-                    local xd <const> = xCenter + xMaxRadius * cosTheta
-                    local yd <const> = yCenter + yMaxRadius * sinTheta
 
-                    drawLine(
-                        context,
-                        xo, yo, xd, yd,
+                    drawLine(context,
+                        xCenter + 0 * cosTheta,
+                        yCenter + 0 * sinTheta,
+                        xCenter + xMaxRadius * cosTheta,
+                        yCenter + yMaxRadius * sinTheta,
                         strokeColor, strokeWeight)
 
                     j = j + 1
@@ -727,26 +723,22 @@ dlg:button {
         elseif diagOption == "RULE_OF_THIRDS" then
             gridName = "Rule of Thirds"
 
-            drawLine(
-                context,
+            drawLine(context,
                 0, hSprite / 3.0 - yOffset,
                 wSprite, hSprite / 3.0 - yOffset,
                 strokeColor, strokeWeight)
 
-            drawLine(
-                context,
+            drawLine(context,
                 0, hSprite * 2.0 / 3.0 - yOffset,
                 wSprite, hSprite * 2.0 / 3.0 - yOffset,
                 strokeColor, strokeWeight)
 
-            drawLine(
-                context,
+            drawLine(context,
                 wSprite / 3.0 + xOffset, 0,
                 wSprite / 3.0 + xOffset, hSprite,
                 strokeColor, strokeWeight)
 
-            drawLine(
-                context,
+            drawLine(context,
                 wSprite * 2.0 / 3.0 + xOffset, 0,
                 wSprite * 2.0 / 3.0 + xOffset, hSprite,
                 strokeColor, strokeWeight)
@@ -770,14 +762,12 @@ dlg:button {
                     local y <const> = u * (yCenter - yRadius)
                         + t * (yCenter + yRadius)
 
-                    drawLine(
-                        context,
+                    drawLine(context,
                         x, yCenter - yRadius,
                         x, yCenter + yRadius,
                         strokeColor, strokeWeight)
 
-                    drawLine(
-                        context,
+                    drawLine(context,
                         xCenter - xRadius, y,
                         xCenter + xRadius, y,
                         strokeColor, strokeWeight)
@@ -795,50 +785,42 @@ dlg:button {
                     useAntialiasVerif)
             end
 
-            drawLine(
-                context,
+            drawLine(context,
                 xCenter, yCenter + yRadius,
                 xCenter + xRadius, yCenter - yRadius,
                 strokeColor, strokeWeight)
 
-            drawLine(
-                context,
+            drawLine(context,
                 xCenter, yCenter - yRadius,
                 xCenter + xRadius, yCenter + yRadius,
                 strokeColor, strokeWeight)
 
-            drawLine(
-                context,
+            drawLine(context,
                 xCenter, yCenter - yRadius,
                 xCenter - xRadius, yCenter + yRadius,
                 strokeColor, strokeWeight)
 
-            drawLine(
-                context,
+            drawLine(context,
                 xCenter + xRadius, yCenter,
                 xCenter - xRadius, yCenter + yRadius,
                 strokeColor, strokeWeight)
 
-            drawLine(
-                context,
+            drawLine(context,
                 xCenter + xRadius, yCenter,
                 xCenter - xRadius, yCenter - yRadius,
                 strokeColor, strokeWeight)
 
-            drawLine(
-                context,
+            drawLine(context,
                 xCenter, yCenter + yRadius,
                 xCenter - xRadius, yCenter - yRadius,
                 strokeColor, strokeWeight)
 
-            drawLine(
-                context,
+            drawLine(context,
                 xCenter - xRadius, yCenter,
                 xCenter + xRadius, yCenter + yRadius,
                 strokeColor, strokeWeight)
 
-            drawLine(
-                context,
+            drawLine(context,
                 xCenter - xRadius, yCenter,
                 xCenter + xRadius, yCenter - yRadius,
                 strokeColor, strokeWeight)
@@ -904,19 +886,15 @@ dlg:button {
 
                 local x0 <const> = xCenter + xRadius * cos(theta0)
                 local y0 <const> = yCenter + yRadius * sin(theta0)
-                local x1 <const> = xCenter + xRadius * cos(theta1)
-                local y1 <const> = yCenter + yRadius * sin(theta1)
-                local x2 <const> = xCenter + xRadius * cos(theta2)
-                local y2 <const> = yCenter + yRadius * sin(theta2)
 
-                drawLine(
-                    context,
-                    x0, y0, x1, y1,
+                drawLine(context, x0, y0,
+                    xCenter + xRadius * cos(theta1),
+                    yCenter + yRadius * sin(theta1),
                     strokeColor, strokeWeight)
 
-                drawLine(
-                    context,
-                    x0, y0, x2, y2,
+                drawLine(context, x0, y0,
+                    xCenter + xRadius * cos(theta2),
+                    yCenter + yRadius * sin(theta2),
                     strokeColor, strokeWeight)
 
                 i = i + 1
