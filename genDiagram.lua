@@ -10,6 +10,8 @@ local diagOptions <const> = {
 }
 
 local layerPlaces <const> = {
+    "ABOVE",
+    "BELOW",
     "TOP",
     "TOP_LOCAL",
     "BOTTOM",
@@ -1004,8 +1006,10 @@ dlg:button {
         local hasBkg <const> = sprite.backgroundLayer ~= nil
         local frObjs <const> = sprite.frames
         local lenFrObjs <const> = #frObjs
-        local activeLayer <const> = app.layer or sprite.layers[1]
-        local activeFrObj <const> = app.frame or sprite.frames[1]
+        local activeLayer <const> = app.layer
+            or sprite.layers[1] --[[@as Layer]]
+        local activeFrObj <const> = app.frame
+            or sprite.frames[1] --[[@as Frame]]
 
         app.transaction("Diagram", function()
             local gridLayer <const> = sprite:newLayer()
@@ -1019,7 +1023,9 @@ dlg:button {
 
             gridLayer.name = gridName
             if layerPlace == "BOTTOM_LOCAL"
-                or layerPlace == "TOP_LOCAL" then
+                or layerPlace == "TOP_LOCAL"
+                or layerPlace == "ABOVE"
+                or layerPlace == "BELOW" then
                 gridLayer.parent = activeLayer.parent
             end
 
@@ -1027,6 +1033,14 @@ dlg:button {
                 gridLayer.stackIndex = hasBkg and 2 or 1
             elseif layerPlace == "BOTTOM_LOCAL" then
                 gridLayer.stackIndex = 1
+            elseif layerPlace == "ABOVE" then
+                gridLayer.stackIndex = activeLayer.stackIndex + 1
+            elseif layerPlace == "BELOW" then
+                if activeLayer.isBackground then
+                    gridLayer.stackIndex = activeLayer.stackIndex + 1
+                else
+                    gridLayer.stackIndex = activeLayer.stackIndex
+                end
             end
         end)
 
