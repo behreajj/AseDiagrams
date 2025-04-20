@@ -559,8 +559,6 @@ dlg:button {
             -- TODO: Warn if aspect ratio is less than phi and diagram
             -- may not fit?
 
-            -- TODO: Draw quarter arcs.
-
             drawRect(
                 context,
                 xCenter, yCenter,
@@ -585,13 +583,6 @@ dlg:button {
                 xConst1, top,
                 xConst1, bottom,
                 strokeColor, strokeWeight)
-            -- TODO: The radii will not scale correctly w/ pixel ratio.
-            drawOrthoArc(
-                context,
-                xConst1, bottom,
-                wDiam * phiInv, wDiam * phiInv, 1,
-                strokeColor, strokeWeight,
-                useAntialiasVerif)
 
             local yConst2 <const> = top + hDiam * phiInv
             drawLine(
@@ -599,13 +590,6 @@ dlg:button {
                 xConst1, yConst2,
                 right, yConst2,
                 strokeColor, strokeWeight)
-            -- TODO: The radii will not scale correctly w/ pixel ratio.
-            drawOrthoArc(
-                context,
-                xConst1, yConst2,
-                wDiam * phiInvE2, wDiam * phiInvE2, 0,
-                strokeColor, strokeWeight,
-                useAntialiasVerif)
 
             local xConst3 <const> = right - wDiam * phiInvE3
             drawLine(
@@ -627,6 +611,43 @@ dlg:button {
                 xConst5, yConst2,
                 xConst5, yConst4,
                 strokeColor, strokeWeight)
+
+            local rx <const> = xCorrect * shortEdge
+            local ry <const> = yCorrect * shortEdge
+            drawOrthoArc(
+                context,
+                xConst1, bottom,
+                rx, ry, 1,
+                strokeColor, strokeWeight,
+                useAntialiasVerif)
+
+            drawOrthoArc(
+                context,
+                xConst1, yConst2,
+                rx * phiInv, ry * phiInv, 0,
+                strokeColor, strokeWeight,
+                useAntialiasVerif)
+
+            drawOrthoArc(
+                context,
+                xConst3, yConst2,
+                rx * phiInvE2, ry * phiInvE2, 3,
+                strokeColor, strokeWeight,
+                useAntialiasVerif)
+
+            drawOrthoArc(
+                context,
+                xConst3, yConst4,
+                rx * phiInvE3, ry * phiInvE3, 2,
+                strokeColor, strokeWeight,
+                useAntialiasVerif)
+
+            drawOrthoArc(
+                context,
+                xConst5, yConst4,
+                rx * phiInvE4, ry * phiInvE4, 1,
+                strokeColor, strokeWeight,
+                useAntialiasVerif)
         elseif diagOption == "POLAR_GRID" then
             gridName = "Polar Grid"
 
