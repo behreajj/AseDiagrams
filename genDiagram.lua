@@ -9,13 +9,22 @@ local diagOptions <const> = {
     "STAR",
 }
 
+local layerPlaces <const> = {
+    "TOP",
+    "TOP_LOCAL",
+    "BOTTOM",
+    "BOTTOM_LOCAL",
+}
+
 local defaults <const> = {
+    -- TODO: Option for active frame only, all frames, range of frames?
     diagOption = "POLAR_GRID",
     strokeWeight = 1,
     swMin = 1,
     swMax = 32,
     strokeAbgr32 = 0xffffffff,
     useAntialias = true,
+    layerPlace = "BOTTOM",
 
     xOffset = 0,
     yOffset = 0,
@@ -411,6 +420,16 @@ dlg:check {
 
 dlg:newrow { always = false }
 
+dlg:combobox {
+    id = "layerPlace",
+    label = "Layer:",
+    option = defaults.layerPlace,
+    options = layerPlaces,
+    focus = false,
+}
+
+dlg:newrow { always = false }
+
 dlg:button {
     id = "okButton",
     text = "&OK",
@@ -475,6 +494,8 @@ dlg:button {
         local strokeColor <const> = args.strokeColor
             or abgr32ToAseColor(defaults.strokeAbgr32) --[[@as Color]]
         local useAntialias <const> = args.useAntialias --[[@as boolean]]
+        local layerPlace <const> = args.layerPlace
+            or defaults.layerPlace --[[@as string]]
 
         if strokeColor.alpha <= 0 then
             app.alert {
@@ -997,8 +1018,16 @@ dlg:button {
             end
 
             gridLayer.name = gridName
-            -- TODO: Display option to prepend or append
-            gridLayer.stackIndex = hasBkg and 2 or 1
+            if layerPlace == "BOTTOM_LOCAL"
+                or layerPlace == "TOP_LOCAL" then
+                gridLayer.parent = activeLayer.parent
+            end
+
+            if layerPlace == "BOTTOM" then
+                gridLayer.stackIndex = hasBkg and 2 or 1
+            elseif layerPlace == "BOTTOM_LOCAL" then
+                gridLayer.stackIndex = 1
+            end
         end)
 
         app.layer = activeLayer
