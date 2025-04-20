@@ -1,8 +1,7 @@
 local diagOptions <const> = {
-    -- TODO: Radiating circles?
-    -- https://www.youtube.com/watch?v=zULrMqzxZ1I
     -- TODO: Phyllotaxis
     "GOLDEN_RECT",
+    "NESTED_CIRCLES",
     "POLAR_GRID",
     "RULE_OF_THIRDS",
     "SAND_RECKONER",
@@ -20,6 +19,14 @@ local defaults <const> = {
 
     xOffset = 0,
     yOffset = 0,
+
+    -- Nested circles:
+    nestedCount = 6,
+    minNest = 3,
+    maxNest = 12,
+    showMeasure = false,
+    showBottom = true,
+    showTop = true,
 
     -- Polar grid:
     ringCount = 8,
@@ -223,9 +230,15 @@ dlg:combobox {
     onchange = function()
         local args <const> = dlg.data
         local diagOption <const> = args.diagOption
+        local isNest <const> = diagOption == "NESTED_CIRCLES"
         local isPolar <const> = diagOption == "POLAR_GRID"
         local isSand <const> = diagOption == "SAND_RECKONER"
         local isStar <const> = diagOption == "STAR"
+
+        dlg:modify { id = "nestedCount", visible = isNest }
+        dlg:modify { id = "showMeasure", visible = isNest }
+        dlg:modify { id = "showBottom", visible = isNest }
+        dlg:modify { id = "showTop", visible = isNest }
 
         dlg:modify { id = "ringCount", visible = isPolar }
         dlg:modify { id = "lineCount", visible = isPolar }
@@ -236,6 +249,45 @@ dlg:combobox {
         dlg:modify { id = "sidesStar", visible = isStar }
         dlg:modify { id = "angStarDeg", visible = isStar }
     end,
+}
+
+dlg:newrow { always = false }
+
+dlg:slider {
+    id = "nestedCount",
+    label = "Count:",
+    value = defaults.nestedCount,
+    min = defaults.minNest,
+    max = defaults.maxNest,
+    focus = false,
+    visible = defaults.diagOption == "NESTED_CIRCLES",
+}
+
+dlg:newrow { always = false }
+
+dlg:check {
+    id = "showMeasure",
+    label = "Show:",
+    text = "Measure",
+    selected = defaults.showMeasure,
+    focus = false,
+    visible = defaults.diagOption == "NESTED_CIRCLES",
+}
+
+dlg:check {
+    id = "showBottom",
+    text = "Bottom",
+    selected = defaults.showBottom,
+    focus = false,
+    visible = defaults.diagOption == "NESTED_CIRCLES",
+}
+
+dlg:check {
+    id = "showTop",
+    text = "Top",
+    selected = defaults.showTop,
+    focus = false,
+    visible = defaults.diagOption == "NESTED_CIRCLES",
 }
 
 dlg:newrow { always = false }
@@ -577,6 +629,96 @@ dlg:button {
                 rx * phiInvE4, ry * phiInvE4, 1,
                 strokeColor, strokeWeight,
                 useAntialiasVerif)
+        elseif diagOption == "NESTED_CIRCLES" then
+            gridName = "Nested Circles"
+
+            local count <const> = args.nestedCount
+                or defaults.nestedCount --[[@as integer]]
+            local showMeasure <const> = args.showMeasure --[[@as boolean]]
+            local showBottom <const> = args.showBottom --[[@as boolean]]
+            local showTop <const> = args.showTop --[[@as boolean]]
+
+            local mShowVerif = showMeasure
+            local bShowVerif = showBottom
+            local tShowVerif = showTop
+            if (not showMeasure)
+                and (not showBottom)
+                and (not showTop) then
+                mShowVerif = defaults.showMeasure
+                bShowVerif = defaults.showBottom
+                tShowVerif = defaults.showTop
+            end
+
+            local baseCircDiam <const> = (shortEdge * 2) / count
+            local baseCircRad <const> = baseCircDiam * 0.5
+            local halfEdge <const> = shortEdge * 0.5
+
+            local xMinRadius <const> = xCorrect * baseCircRad
+            local yMinRadius <const> = yCorrect * baseCircRad
+            local xMaxRadius <const> = xCorrect * halfEdge
+            local yMaxRadius <const> = yCorrect * halfEdge
+
+            local yOrig <const> = yCenter - yMinRadius + halfEdge
+            local yDest <const> = yCenter + yMinRadius - halfEdge
+
+            local toFac <const> = count ~= 1
+                and 1.0 / (count - 1.0)
+                or 0.0
+
+            if mShowVerif then
+                local i = 0
+                while i < count do
+                    local t <const> = i * toFac
+                    local y <const> = (1.0 - t) * yOrig + t * yDest
+
+                    drawEllipse(
+                        context,
+                        xCenter, y,
+                        xMinRadius, yMinRadius,
+                        strokeColor, strokeWeight,
+                        useAntialiasVerif)
+
+                    i = i + 1
+                end
+            end
+
+            if bShowVerif then
+                local j = 0
+                while j < count do
+                    local t <const> = j * toFac
+                    local u <const> = 1.0 - t
+                    local xr <const> = u * xMinRadius + t * xMaxRadius
+                    local yr <const> = u * yMinRadius + t * yMaxRadius
+
+                    drawEllipse(
+                        context,
+                        xCenter, yOrig + yMinRadius - yr,
+                        xr, yr,
+                        strokeColor, strokeWeight,
+                        useAntialiasVerif)
+
+                    j = j + 1
+                end
+            end
+
+            if tShowVerif then
+                local k = 0
+                while k < count do
+                    local t <const> = k * toFac
+                    local u <const> = 1.0 - t
+                    local xr <const> = u * xMinRadius + t * xMaxRadius
+                    local yr <const> = u * yMinRadius + t * yMaxRadius
+
+                    drawEllipse(
+                        context,
+                        xCenter, yDest - yMinRadius + yr,
+                        xr, yr,
+                        strokeColor, strokeWeight,
+                        useAntialiasVerif)
+
+                    k = k + 1
+                end
+            end
         elseif diagOption == "POLAR_GRID" then
             gridName = "Polar Grid"
 
@@ -855,8 +997,8 @@ dlg:button {
             end
 
             gridLayer.name = gridName
+            -- TODO: Display option to prepend or append
             gridLayer.stackIndex = hasBkg and 2 or 1
-            gridLayer.isEditable = false
         end)
 
         app.layer = activeLayer

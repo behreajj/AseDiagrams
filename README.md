@@ -16,6 +16,10 @@ If an error message in Aseprite's console appears, check if the script folder is
 
 A hot key can be assigned to the script by going to `Edit > Keyboard Shortcuts`. The search input box in the top left of the shortcuts dialog can be used to locate the script by its file name. Upon launching the dialog, the OK button will have focus. Holding down the `Alt` key and pressing `O` will create the grid. The dialog can be closed with `Alt+C`.
 
+## Acknowledgments
+
+Many diagrams were influenced by [Zak Korvin](https://www.youtube.com/@ZKorvin)'s geometry drawing videos: [Art Therapy: Radiating Circles](https://www.youtube.com/watch?v=zULrMqzxZ1I), [The power of the Sand Reckoner's diagram](https://www.youtube.com/watch?v=4cG9RahEpvM), [Try This Grid on Your Next Mandala](https://www.youtube.com/watch?v=vF1Y1avXjF8), [Drawing the Pentagram](https://www.youtube.com/watch?v=BYz08m1HfVw).
+
 ## Examples
 
 The script supports the creation of the following diagrams:
@@ -23,6 +27,10 @@ The script supports the creation of the following diagrams:
 ![Golden Rectangle](goldenRect.png)
 
 Golden Rectangle
+
+![Nested Circles](nestedCircles.png)
+
+Nested Circles
 
 ![Polar Grid](polarGrid.png)
 
