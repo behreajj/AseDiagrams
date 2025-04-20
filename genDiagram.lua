@@ -495,12 +495,13 @@ dlg:button {
 
             local phi <const> = (1.0 + math.sqrt(5.0)) * 0.5
             local phiInv <const> = 1.0 / phi
-            local phiComplInv <const> = 1.0 - phiInv
-            -- local halfEdge <const> = shortEdge * 0.5
-            -- For diagnostic purposes make this smaller temporarily
-            local halfEdge <const> = shortEdge * 0.25
-            local wRect <const> = halfEdge * phi
-            local hRect <const> = halfEdge
+            local phiInvE3 <const> = phiInv ^ 3
+            local phiInvE5 <const> = phiInv ^ 5
+            local halfEdge <const> = shortEdge * 0.5
+            local wRect <const> = xCorrect * halfEdge * phi
+            local hRect <const> = yCorrect * halfEdge
+
+            -- TODO: Draw quarter arcs.
 
             drawRect(
                 context,
@@ -509,36 +510,58 @@ dlg:button {
                 strokeColor, strokeWeight,
                 useAntialiasVerif)
 
-            local levels <const> = 8
+            local wDiam <const> = wRect + wRect
+            local hDiam <const> = hRect + hRect
 
-            local xo = xCenter - wRect
-            local yo = yCenter - hRect
-            local xd = xCenter + wRect
-            local yd = yCenter - hRect
+            local left <const> = xCenter - wRect
+            local right <const> = xCenter + wRect
+            local top <const> = yCenter - hRect
+            local bottom <const> = yCenter + hRect
 
-            local i = 0
-            while i < levels do
-                local isEven <const> = i % 2 ~= 1
-                local ax <const> = isEven and xo or xd
-                local ay <const> = isEven and yo or yd
-                local bx <const> = isEven and xd or xo
-                local by <const> = isEven and yd or yo
-                local t <const> = isEven and phiInv or phiComplInv
-                local u <const> = isEven and phiComplInv or phiInv
-                local scalar <const> = isEven and 1.0 or phi
-                xo = ax * u + bx * t
-                yo = ay * u + by * t
-                xd = xo + (ay - yo) * scalar
-                yd = yo - (ax - xo) * scalar
+            -- Iter 1
+            local xConst1 <const> = left + wDiam * phiInv
+            drawLine(
+                context,
+                xConst1, top,
+                xConst1, bottom,
+                strokeColor, strokeWeight,
+                useAntialiasVerif)
 
-                drawLine(
-                    context,
-                    xo, yo, xd, yd,
-                    strokeColor, strokeWeight,
-                    useAntialiasVerif)
+            -- Iter 2
+            local yConst2 <const> = top + hDiam * phiInv
+            drawLine(
+                context,
+                xConst1, yConst2,
+                right, yConst2,
+                strokeColor, strokeWeight,
+                useAntialiasVerif)
 
-                i = i + 1
-            end
+            -- Iter 3
+            local xConst3 <const> = right - wDiam * phiInvE3
+            drawLine(
+                context,
+                xConst3, yConst2,
+                xConst3, bottom,
+                strokeColor, strokeWeight,
+                useAntialiasVerif)
+
+            -- Iter 4
+            local yConst4 <const> = bottom - hDiam * phiInvE3
+            drawLine(
+                context,
+                xConst1, yConst4,
+                xConst3, yConst4,
+                strokeColor, strokeWeight,
+                useAntialiasVerif)
+
+            -- Iter 5
+            local xConst5 <const> = xConst1 + wDiam * phiInvE5
+            drawLine(
+                context,
+                xConst5, yConst2,
+                xConst5, yConst4,
+                strokeColor, strokeWeight,
+                useAntialiasVerif)
         elseif diagOption == "POLAR_GRID" then
             gridName = "Polar Grid"
 
