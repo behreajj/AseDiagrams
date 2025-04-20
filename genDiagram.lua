@@ -670,7 +670,7 @@ dlg:button {
                 tShowVerif = defaults.showTop
             end
 
-            local baseCircDiam <const> = (shortEdge * 2) / count
+            local baseCircDiam <const> = (yCorrect * shortEdge * 2) / count
             local baseCircRad <const> = baseCircDiam * 0.5
             local halfEdge <const> = shortEdge * 0.5
 
@@ -679,8 +679,8 @@ dlg:button {
             local xMaxRadius <const> = xCorrect * halfEdge
             local yMaxRadius <const> = yCorrect * halfEdge
 
-            local yOrig <const> = yCenter - yMinRadius + halfEdge
-            local yDest <const> = yCenter + yMinRadius - halfEdge
+            local yOrig <const> = yCenter - yMinRadius + yMaxRadius
+            local yDest <const> = yCenter + yMinRadius - yMaxRadius
 
             local toFac <const> = count ~= 1
                 and 1.0 / (count - 1.0)
