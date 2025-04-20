@@ -2,7 +2,8 @@ local diagOptions <const> = {
     "POLAR_GRID",
     "RULE_OF_THIRDS",
     "SAND_RECKONER",
-    "SEED_OF_LIFE"
+    "SEED_OF_LIFE",
+    "STAR",
 }
 
 local defaults <const> = {
@@ -29,6 +30,12 @@ local defaults <const> = {
     sandReckCount = 5,
     minSandReck = 0,
     maxSandReck = 11,
+
+    -- Star:
+    sidesStar = 5,
+    starMin = 5,
+    starMax = 16,
+    angStarDeg = 0,
 }
 
 ---@param context GraphicsContext canvas
@@ -174,12 +181,16 @@ dlg:combobox {
         local diagOption <const> = args.diagOption
         local isPolar <const> = diagOption == "POLAR_GRID"
         local isSand <const> = diagOption == "SAND_RECKONER"
+        local isStar <const> = diagOption == "STAR"
 
         dlg:modify { id = "ringCount", visible = isPolar }
         dlg:modify { id = "lineCount", visible = isPolar }
         dlg:modify { id = "angOffsetDeg", visible = isPolar }
 
         dlg:modify { id = "sandReckCount", visible = isSand }
+
+        dlg:modify { id = "sidesStar", visible = isStar }
+        dlg:modify { id = "angStarDeg", visible = isStar }
     end,
 }
 
@@ -229,6 +240,30 @@ dlg:slider {
     max = defaults.maxSandReck,
     focus = false,
     visible = defaults.diagOption == "SAND_RECKONER",
+}
+
+dlg:newrow { always = false }
+
+dlg:slider {
+    id = "sidesStar",
+    label = "Spokes:",
+    value = defaults.sidesStar,
+    min = defaults.starMin,
+    max = defaults.starMax,
+    focus = false,
+    visible = defaults.diagOption == "STAR",
+}
+
+dlg:newrow { always = false }
+
+dlg:slider {
+    id = "angStarDeg",
+    label = "Angle:",
+    value = defaults.angStarDeg,
+    min = -180,
+    max = 180,
+    focus = false,
+    visible = defaults.diagOption == "STAR",
 }
 
 dlg:newrow { always = false }
@@ -374,8 +409,8 @@ dlg:button {
         local sin <const> = math.sin
 
         local tau <const> = math.pi + math.pi
-        local phi <const> = (1 + math.sqrt(5)) / 2
-        local goldenAngle <const> = tau / (phi * phi)
+        -- local phi <const> = (1 + math.sqrt(5)) / 2
+        -- local goldenAngle <const> = tau / (phi * phi)
 
         local gridName = "Layer"
         if diagOption == "POLAR_GRID" then
@@ -608,6 +643,62 @@ dlg:button {
                     context,
                     xc, yc,
                     xRadius, yRadius,
+                    strokeColor, strokeWeight,
+                    useAntialiasVerif)
+
+                i = i + 1
+            end
+        elseif diagOption == "STAR" then
+            local sidesStar <const> = args.sidesStar
+                or defaults.sidesStar --[[@as integer]]
+            local angStarDeg <const> = args.angStarDeg
+                or defaults.angStarDeg --[[@as integer]]
+
+            local sidesVerif <const> = math.max(5, math.abs(sidesStar))
+            local angStarRad <const> = math.rad(90 + angStarDeg)
+            local toTheta <const> = tau / sidesVerif
+            local skip <const> = math.ceil(sidesVerif / 3)
+
+            gridName = string.format("Star %d", sidesVerif)
+
+            local xRadius <const> = xCorrect * shortEdge * 0.5
+            local yRadius <const> = yCorrect * shortEdge * 0.5
+
+            -- Center circle
+            drawEllipse(
+                context,
+                xCenter, yCenter,
+                xRadius, yRadius,
+                strokeColor, strokeWeight,
+                useAntialiasVerif)
+
+            local i = 0
+            while i < sidesVerif do
+                local j <const> = (i + 1) % sidesVerif
+                local k <const> = (i + skip) % sidesVerif
+
+                local theta0 <const> = i * toTheta - angStarRad
+                local theta1 <const> = j * toTheta - angStarRad
+                local theta2 <const> = k * toTheta - angStarRad
+
+                local x0 <const> = xCenter + xRadius * cos(theta0)
+                local y0 <const> = yCenter + yRadius * sin(theta0)
+                local x1 <const> = xCenter + xRadius * cos(theta1)
+                local y1 <const> = yCenter + yRadius * sin(theta1)
+                local x2 <const> = xCenter + xRadius * cos(theta2)
+                local y2 <const> = yCenter + yRadius * sin(theta2)
+
+                drawLine(
+                    context,
+                    x0, y0,
+                    x1, y1,
+                    strokeColor, strokeWeight,
+                    useAntialiasVerif)
+
+                drawLine(
+                    context,
+                    x0, y0,
+                    x2, y2,
                     strokeColor, strokeWeight,
                     useAntialiasVerif)
 
