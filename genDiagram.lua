@@ -1,4 +1,6 @@
 local diagOptions <const> = {
+    -- Radiating circles?
+    -- https://www.youtube.com/watch?v=zULrMqzxZ1I
     -- "DIMETRIC_GRID",
     "GOLDEN_RECT",
     "POLAR_GRID",
@@ -419,14 +421,6 @@ dlg:button {
         local spriteSpec <const> = sprite.spec
         local colorMode <const> = spriteSpec.colorMode
 
-        -- if colorMode ~= ColorMode.RGB then
-        --     app.alert {
-        --         title = "Error",
-        --         text = "Only RGB Color Mode is supported."
-        --     }
-        --     return
-        -- end
-
         local image <const> = Image(spriteSpec)
         local context <const> = image.context
         if not context then
@@ -496,7 +490,6 @@ dlg:button {
 
         local cos <const> = math.cos
         local sin <const> = math.sin
-
         local tau <const> = math.pi + math.pi
         -- local phi <const> = (1 + math.sqrt(5)) / 2
         -- local goldenAngle <const> = tau / (phi * phi)
@@ -878,13 +871,6 @@ dlg:button {
 
             local xRadius <const> = xCorrect * shortEdge * 0.5
             local yRadius <const> = yCorrect * shortEdge * 0.5
-
-            drawEllipse(
-                context,
-                xCenter, yCenter,
-                xRadius, yRadius,
-                strokeColor, strokeWeight,
-                useAntialiasVerif)
 
             local i = 0
             while i < sidesVerif do
