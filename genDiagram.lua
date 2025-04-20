@@ -384,8 +384,35 @@ dlg:button {
     onclick = function()
         local sprite = app.sprite
         if not sprite then
-            -- TODO: This needs to set a palette, clarify color mode and space.
-            sprite = Sprite(640, 360)
+            local defSpec <const> = ImageSpec {
+                width = 640,
+                height = 360,
+                colorMode = ColorMode.RGB,
+                transparentColor = 0
+            }
+            defSpec.colorSpace = ColorSpace { sRGB = true }
+            sprite = Sprite(defSpec)
+
+            app.transaction("Set Palette", function()
+                local palette <const> = sprite.palettes[1]
+                palette:resize(256)
+                local floor <const> = math.floor
+
+                local k = 0
+                while k < 256 do
+                    local h <const> = k // 64
+                    local m <const> = k - h * 64
+                    palette:setColor(k, Color {
+                        r = floor(((m % 8) / 7) * 255 + 0.5),
+                        g = floor(((m // 8) / 7) * 255 + 0.5),
+                        b = floor((h / 3) * 255 + 0.5),
+                        a = 255
+                    })
+                    k = k + 1
+                end
+                palette:setColor(0, Color { r = 0, g = 0, b = 0, a = 0 })
+            end)
+
             app.sprite = sprite
         end
 
