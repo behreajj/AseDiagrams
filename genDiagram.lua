@@ -384,6 +384,7 @@ dlg:button {
     onclick = function()
         local sprite = app.sprite
         if not sprite then
+            -- TODO: This needs to set a palette, clarify color mode and space.
             sprite = Sprite(640, 360)
             app.sprite = sprite
         end
@@ -391,14 +392,13 @@ dlg:button {
         local spriteSpec <const> = sprite.spec
         local colorMode <const> = spriteSpec.colorMode
 
-        -- TODO: Is this really necessary?
-        if colorMode ~= ColorMode.RGB then
-            app.alert {
-                title = "Error",
-                text = "Only RGB Color Mode is supported."
-            }
-            return
-        end
+        -- if colorMode ~= ColorMode.RGB then
+        --     app.alert {
+        --         title = "Error",
+        --         text = "Only RGB Color Mode is supported."
+        --     }
+        --     return
+        -- end
 
         local image <const> = Image(spriteSpec)
         local context <const> = image.context
@@ -852,7 +852,6 @@ dlg:button {
             local xRadius <const> = xCorrect * shortEdge * 0.5
             local yRadius <const> = yCorrect * shortEdge * 0.5
 
-            -- TODO: Circle not needed? Make incircle a separate option?
             drawEllipse(
                 context,
                 xCenter, yCenter,
