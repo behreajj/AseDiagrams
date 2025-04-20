@@ -20,6 +20,10 @@ A hot key can be assigned to the script by going to `Edit > Keyboard Shortcuts`.
 
 The script supports the creation of the following diagrams:
 
+![Golden Rectangle](goldenRect.png)
+
+Golden Rectangle
+
 ![Polar Grid](polarGrid.png)
 
 Polar Grid
