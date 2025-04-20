@@ -618,8 +618,12 @@ dlg:button {
                 or defaults.angOffsetDeg --[[@as integer]]
 
             local invalRequest <const> = ringCount <= 0 and lineCount <= 0
-            local rcVerif = invalRequest and defaults.ringCount or ringCount
-            local lcVerif = invalRequest and defaults.lineCount or lineCount
+            local rcVerif <const> = invalRequest
+                and defaults.ringCount
+                or ringCount
+            local lcVerif <const> = invalRequest
+                and defaults.lineCount
+                or lineCount
 
             local angOffsetRad <const> = (useAntialiasVerif
                     and (angOffsetDeg == 26
