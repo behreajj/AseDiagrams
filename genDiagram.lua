@@ -1,5 +1,6 @@
 local diagOptions <const> = {
     -- "DIMETRIC_GRID",
+    "GOLDEN_RECT",
     "POLAR_GRID",
     "RULE_OF_THIRDS",
     "SAND_RECKONER",
@@ -400,6 +401,7 @@ dlg:button {
         local wPixel <const> = math.max(1, math.abs(pixelRatio.width))
         local hPixel <const> = math.max(1, math.abs(pixelRatio.height))
         local shortPixel <const> = math.min(wPixel, hPixel)
+        local longPixel <const> = math.max(wPixel, hPixel)
 
         local xCorrect = 1
         local yCorrect = 1
@@ -419,6 +421,10 @@ dlg:button {
                 wSprite * wPixel,
                 hSprite * hPixel)
             // shortPixel
+        local longEdge <const> = math.max(
+                wSprite * wPixel,
+                hSprite * hPixel)
+            // longPixel
 
         local useAntialiasVerif <const> = useAntialias
             and colorMode ~= ColorMode.INDEXED
@@ -443,8 +449,11 @@ dlg:button {
 
             gridName = string.format("Dimetric Grid %d", dimCount)
 
-            local xMag <const> = xCorrect * shortEdge * 2
-            local yMag <const> = yCorrect * shortEdge
+            -- normalized (2, 1) =
+            -- 0.8944271909999159
+            -- 0.4472135954999579
+            local vx <const> = xCorrect * shortEdge * 0.8944271909999159
+            local vy <const> = yCorrect * shortEdge * 0.4472135954999579
             local toFac <const> = 1.0 / (countVerif - 1.0)
 
             local i = 0
@@ -455,10 +464,10 @@ dlg:button {
                 local xOff <const> = xCorrect * offset
                 local yOff <const> = yCorrect * offset
 
-                local xo0 <const> = xCenter + xOff - xMag
-                local yo0 <const> = yCenter + yOff - yMag
-                local xd0 <const> = xCenter + xOff + xMag
-                local yd0 <const> = yCenter + yOff + yMag
+                local xo0 <const> = xCenter + xOff - vx
+                local yo0 <const> = yCenter - yOff - vy
+                local xd0 <const> = xCenter + xOff + vx
+                local yd0 <const> = yCenter - yOff + vy
 
                 drawLine(
                     context,
@@ -467,15 +476,64 @@ dlg:button {
                     strokeColor, strokeWeight,
                     useAntialiasVerif)
 
-                local xo1 <const> = xCenter + xOff - xMag
-                local yo1 <const> = yCenter - yOff + yMag
-                local xd1 <const> = xCenter + xOff + xMag
-                local yd1 <const> = yCenter - yOff - yMag
+                local xo1 <const> = xCenter + xOff - vx
+                local yo1 <const> = yCenter + yOff + vy
+                local xd1 <const> = xCenter + xOff + vx
+                local yd1 <const> = yCenter + yOff - vy
 
                 drawLine(
                     context,
                     xo1, yo1,
                     xd1, yd1,
+                    strokeColor, strokeWeight,
+                    useAntialiasVerif)
+
+                i = i + 1
+            end
+        elseif diagOption == "GOLDEN_RECT" then
+            gridName = "Golden Rectangle"
+
+            local phi <const> = (1.0 + math.sqrt(5.0)) * 0.5
+            local phiInv <const> = 1.0 / phi
+            local phiComplInv <const> = 1.0 - phiInv
+            -- local halfEdge <const> = shortEdge * 0.5
+            -- For diagnostic purposes make this smaller temporarily
+            local halfEdge <const> = shortEdge * 0.25
+            local wRect <const> = halfEdge * phi
+            local hRect <const> = halfEdge
+
+            drawRect(
+                context,
+                xCenter, yCenter,
+                wRect, hRect,
+                strokeColor, strokeWeight,
+                useAntialiasVerif)
+
+            local levels <const> = 8
+
+            local xo = xCenter - wRect
+            local yo = yCenter - hRect
+            local xd = xCenter + wRect
+            local yd = yCenter - hRect
+
+            local i = 0
+            while i < levels do
+                local isEven <const> = i % 2 ~= 1
+                local ax <const> = isEven and xo or xd
+                local ay <const> = isEven and yo or yd
+                local bx <const> = isEven and xd or xo
+                local by <const> = isEven and yd or yo
+                local t <const> = isEven and phiInv or phiComplInv
+                local u <const> = isEven and phiComplInv or phiInv
+                local scalar <const> = isEven and 1.0 or phi
+                xo = ax * u + bx * t
+                yo = ay * u + by * t
+                xd = xo + (ay - yo) * scalar
+                yd = yo - (ax - xo) * scalar
+
+                drawLine(
+                    context,
+                    xo, yo, xd, yd,
                     strokeColor, strokeWeight,
                     useAntialiasVerif)
 
@@ -543,8 +601,7 @@ dlg:button {
 
                     drawLine(
                         context,
-                        xo, yo,
-                        xd, yd,
+                        xo, yo, xd, yd,
                         strokeColor, strokeWeight,
                         useAntialiasVerif)
 
@@ -596,8 +653,10 @@ dlg:button {
                     local t <const> = (i + 1) / sandReckCount
                     local u <const> = 1.0 - t
 
-                    local x <const> = u * (xCenter - xRadius) + t * (xCenter + xRadius)
-                    local y <const> = u * (yCenter - yRadius) + t * (yCenter + yRadius)
+                    local x <const> = u * (xCenter - xRadius)
+                        + t * (xCenter + xRadius)
+                    local y <const> = u * (yCenter - yRadius)
+                        + t * (yCenter + yRadius)
 
                     drawLine(
                         context,
@@ -758,15 +817,13 @@ dlg:button {
 
                 drawLine(
                     context,
-                    x0, y0,
-                    x1, y1,
+                    x0, y0, x1, y1,
                     strokeColor, strokeWeight,
                     useAntialiasVerif)
 
                 drawLine(
                     context,
-                    x0, y0,
-                    x2, y2,
+                    x0, y0, x2, y2,
                     strokeColor, strokeWeight,
                     useAntialiasVerif)
 
