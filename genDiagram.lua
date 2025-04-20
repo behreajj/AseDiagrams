@@ -1,7 +1,7 @@
 local diagOptions <const> = {
-    -- Radiating circles?
+    -- TODO: Radiating circles?
     -- https://www.youtube.com/watch?v=zULrMqzxZ1I
-    -- "DIMETRIC_GRID",
+    -- TODO: Phyllotaxis
     "GOLDEN_RECT",
     "POLAR_GRID",
     "RULE_OF_THIRDS",
@@ -20,11 +20,6 @@ local defaults <const> = {
 
     xOffset = 0,
     yOffset = 0,
-
-    -- Dimetric grid:
-    dimCount = 24,
-    dimMin = 3,
-    dimMax = 64,
 
     -- Polar grid:
     ringCount = 8,
@@ -228,12 +223,9 @@ dlg:combobox {
     onchange = function()
         local args <const> = dlg.data
         local diagOption <const> = args.diagOption
-        local isDim <const> = diagOption == "DIMETRIC_GRID"
         local isPolar <const> = diagOption == "POLAR_GRID"
         local isSand <const> = diagOption == "SAND_RECKONER"
         local isStar <const> = diagOption == "STAR"
-
-        dlg:modify { id = "dimCount", visible = isDim }
 
         dlg:modify { id = "ringCount", visible = isPolar }
         dlg:modify { id = "lineCount", visible = isPolar }
@@ -244,18 +236,6 @@ dlg:combobox {
         dlg:modify { id = "sidesStar", visible = isStar }
         dlg:modify { id = "angStarDeg", visible = isStar }
     end,
-}
-
-dlg:newrow { always = false }
-
-dlg:slider {
-    id = "dimCount",
-    label = "Count:",
-    value = defaults.dimCount,
-    min = defaults.dimMin,
-    max = defaults.dimMax,
-    focus = false,
-    visible = defaults.diagOption == "DIMETRIC_GRID",
 }
 
 dlg:newrow { always = false }
@@ -495,53 +475,7 @@ dlg:button {
         -- local goldenAngle <const> = tau / (phi * phi)
 
         local gridName = "Layer"
-        if diagOption == "DIMETRIC_GRID" then
-            -- TODO: Still needs refinement.
-
-            local dimCount <const> = args.dimCount
-                or defaults.dimCount --[[@as integer]]
-            local countVerif <const> = 1 + math.max(3, dimCount)
-
-            gridName = string.format("Dimetric Grid %d", dimCount)
-
-            -- normalized (2, 1) =
-            -- 0.8944271909999159
-            -- 0.4472135954999579
-            local vx <const> = xCorrect * shortEdge * 0.8944271909999159
-            local vy <const> = yCorrect * shortEdge * 0.4472135954999579
-            local toFac <const> = 1.0 / (countVerif - 1.0)
-
-            local i = 0
-            while i < countVerif do
-                local t <const> = i * toFac
-                local u <const> = 1.0 - t
-                local offset <const> = u * -shortEdge + t * shortEdge
-                local xOff <const> = xCorrect * offset
-                local yOff <const> = yCorrect * offset
-
-                local xo0 <const> = xCenter + xOff - vx
-                local yo0 <const> = yCenter - yOff - vy
-                local xd0 <const> = xCenter + xOff + vx
-                local yd0 <const> = yCenter - yOff + vy
-
-                drawLine(context,
-                    xo0, yo0,
-                    xd0, yd0,
-                    strokeColor, strokeWeight)
-
-                local xo1 <const> = xCenter + xOff - vx
-                local yo1 <const> = yCenter + yOff + vy
-                local xd1 <const> = xCenter + xOff + vx
-                local yd1 <const> = yCenter + yOff - vy
-
-                drawLine(context,
-                    xo1, yo1,
-                    xd1, yd1,
-                    strokeColor, strokeWeight)
-
-                i = i + 1
-            end
-        elseif diagOption == "GOLDEN_RECT" then
+        if diagOption == "GOLDEN_RECT" then
             gridName = "Golden Rectangle"
 
             local phi <const> = (1.0 + math.sqrt(5.0)) * 0.5
@@ -553,9 +487,6 @@ dlg:button {
             local halfEdge <const> = shortEdge * 0.5
             local wRect <const> = xCorrect * halfEdge * phi
             local hRect <const> = yCorrect * halfEdge
-
-            -- TODO: Warn if aspect ratio is less than phi and diagram
-            -- may not fit?
 
             drawRect(
                 context,
