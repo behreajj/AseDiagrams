@@ -52,4 +52,6 @@ Seed of Life
 
 Star
 
+Not shown are the in-circle and in-square options.
+
 🇹🇼 🇺🇦

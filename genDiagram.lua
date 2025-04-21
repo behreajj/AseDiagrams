@@ -1,6 +1,8 @@
 local diagOptions <const> = {
     -- phyllotaxis, stereographic projection?
     "GOLDEN_RECT",
+    "IN_CIRCLE",
+    "IN_SQUARE",
     "NESTED_CIRCLES",
     "POLAR_GRID",
     "RULE_OF_THIRDS",
@@ -655,6 +657,24 @@ dlg:button {
                 context,
                 xConst5, yConst4,
                 rx * phiInvE4, ry * phiInvE4, 1,
+                strokeColor, strokeWeight,
+                useAntialiasVerif)
+        elseif diagOption == "IN_CIRCLE" then
+            local xRadius <const> = xCorrect * shortEdge * 0.5
+            local yRadius <const> = yCorrect * shortEdge * 0.5
+            drawEllipse(
+                context,
+                xCenter, yCenter,
+                xRadius, yRadius,
+                strokeColor, strokeWeight,
+                useAntialiasVerif)
+        elseif diagOption == "IN_SQUARE" then
+            local xRadius <const> = xCorrect * shortEdge * 0.5
+            local yRadius <const> = yCorrect * shortEdge * 0.5
+            drawRect(
+                context,
+                xCenter, yCenter,
+                xRadius, yRadius,
                 strokeColor, strokeWeight,
                 useAntialiasVerif)
         elseif diagOption == "NESTED_CIRCLES" then
