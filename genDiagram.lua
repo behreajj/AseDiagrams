@@ -978,7 +978,7 @@ dlg:button {
             local toTheta <const> = tau / sidesVerif
             local skip <const> = math.ceil(sidesVerif / 3)
 
-            gridName = string.format("Star %d", sidesVerif)
+            gridName = string.format("Star %d (%d)", sidesVerif, angStarDeg)
 
             local xRadius <const> = xCorrect * shortEdge * 0.5
             local yRadius <const> = yCorrect * shortEdge * 0.5
