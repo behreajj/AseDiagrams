@@ -558,6 +558,7 @@ dlg:button {
         if diagOption == "GOLDEN_RECT" then
             gridName = "Golden Rectangle"
 
+            -- Same as phi ^ -1, phi ^ -2, etc.
             local phiInv <const> = 1.0 / phi
             local phiInvE2 <const> = phiInv * phiInv
             local phiInvE3 <const> = phiInvE2 * phiInv
@@ -889,26 +890,27 @@ dlg:button {
                     useAntialiasVerif)
             end
 
+            ---@type number[][]
             local points <const> = {
-                xCenter + xRadius, yCenter,           -- right edge midpoint
-                xCenter + xRadius, yCenter - yRadius, -- top right corner
-                xCenter, yCenter - yRadius,           -- top edge midpoint
-                xCenter - xRadius, yCenter - yRadius, -- top left corner
-                xCenter - xRadius, yCenter,           -- left edge midpoint
-                xCenter - xRadius, yCenter + yRadius, -- bottom left corner
-                xCenter, yCenter + yRadius,           -- bottom edge midpoint
-                xCenter + xRadius, yCenter + yRadius, -- bottom right corner
+                { xCenter + xRadius, yCenter },           -- right edge middle
+                { xCenter + xRadius, yCenter - yRadius }, -- top right corner
+                { xCenter,           yCenter - yRadius }, -- top edge middle
+                { xCenter - xRadius, yCenter - yRadius }, -- top left corner
+                { xCenter - xRadius, yCenter },           -- left edge middle
+                { xCenter - xRadius, yCenter + yRadius }, -- bottom left corner
+                { xCenter,           yCenter + yRadius }, -- bottom edge middle
+                { xCenter + xRadius, yCenter + yRadius }, -- bottom right corner
             }
             local lenPoints <const> = #points
 
             local j = 0
             while j < lenPoints do
-                local k <const> = (j + 4) % lenPoints
+                local k <const> = (j + 3) % lenPoints
                 drawLine(context,
-                    points[1 + j], points[2 + j],
-                    points[1 + k], points[2 + k],
+                    points[1 + j][1], points[1 + j][2],
+                    points[1 + k][1], points[1 + k][2],
                     strokeColor, strokeWeight)
-                j = j + 2
+                j = j + 1
             end
         elseif diagOption == "SEED_OF_LIFE" then
             gridName = "Seed of Life"
