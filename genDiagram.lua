@@ -660,8 +660,11 @@ dlg:button {
                 strokeColor, strokeWeight,
                 useAntialiasVerif)
         elseif diagOption == "IN_CIRCLE" then
+            gridName = "In Circle"
+
             local xRadius <const> = xCorrect * shortEdge * 0.5
             local yRadius <const> = yCorrect * shortEdge * 0.5
+
             drawEllipse(
                 context,
                 xCenter, yCenter,
@@ -669,8 +672,11 @@ dlg:button {
                 strokeColor, strokeWeight,
                 useAntialiasVerif)
         elseif diagOption == "IN_SQUARE" then
+            gridName = "In Square"
+
             local xRadius <const> = xCorrect * shortEdge * 0.5
             local yRadius <const> = yCorrect * shortEdge * 0.5
+
             drawRect(
                 context,
                 xCenter, yCenter,
