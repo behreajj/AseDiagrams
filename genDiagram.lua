@@ -678,13 +678,13 @@ dlg:button {
                 strokeColor, strokeWeight,
                 useAntialiasVerif)
         elseif diagOption == "NESTED_CIRCLES" then
-            gridName = "Nested Circles"
-
             local count <const> = args.nestedCount
                 or defaults.nestedCount --[[@as integer]]
             local showMeasure <const> = args.showMeasure --[[@as boolean]]
             local showBottom <const> = args.showBottom --[[@as boolean]]
             local showTop <const> = args.showTop --[[@as boolean]]
+
+            gridName = string.format("Nested Circles %d", count)
 
             local mShowVerif = showMeasure
             local bShowVerif = showBottom
