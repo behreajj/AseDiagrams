@@ -1,7 +1,5 @@
 local diagOptions <const> = {
-    -- TODO: Phyllotaxis
-    -- TODO: Mobius transformation
-    -- TODO: https://en.wikipedia.org/wiki/Stereographic_projection#Wulff_net
+    -- phyllotaxis, stereographic projection?
     "GOLDEN_RECT",
     "NESTED_CIRCLES",
     "POLAR_GRID",
@@ -547,8 +545,14 @@ dlg:button {
         local cos <const> = math.cos
         local sin <const> = math.sin
         local tau <const> = math.pi + math.pi
+
+        -- phi = 1.618033988749895
+        -- phiInv = 0.6180339887498948
         local phi <const> = (1 + math.sqrt(5)) / 2
-        local goldenAngle <const> = tau / (phi * phi)
+
+        -- goldenAngle = 2.399963229728653 radians
+        -- or 137.50776405003785 degrees
+        -- local goldenAngle <const> = tau / (phi * phi)
 
         local gridName = "Layer"
         if diagOption == "GOLDEN_RECT" then
