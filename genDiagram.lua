@@ -48,6 +48,7 @@ local defaults <const> = {
     polarLineMin = 0,
     polarLineMax = 64,
     angOffsetDeg = 0,
+    swirlDeg = 0,
 
     -- Sand reckoner:
     sandReckCount = 5,
@@ -255,6 +256,7 @@ dlg:combobox {
         dlg:modify { id = "ringCount", visible = isPolar }
         dlg:modify { id = "lineCount", visible = isPolar }
         dlg:modify { id = "angOffsetDeg", visible = isPolar }
+        dlg:modify { id = "swirlDeg", visible = isPolar }
 
         dlg:modify { id = "sandReckCount", visible = isSand }
 
@@ -332,6 +334,18 @@ dlg:slider {
     id = "angOffsetDeg",
     label = "Angle:",
     value = defaults.angOffsetDeg,
+    min = -180,
+    max = 180,
+    focus = false,
+    visible = defaults.diagOption == "POLAR_GRID",
+}
+
+dlg:newrow { always = false }
+
+dlg:slider {
+    id = "swirlDeg",
+    label = "Swirl:",
+    value = defaults.swirlDeg,
     min = -180,
     max = 180,
     focus = false,
@@ -548,10 +562,6 @@ dlg:button {
         local sin <const> = math.sin
         local tau <const> = math.pi + math.pi
 
-        -- phi = 1.618033988749895
-        -- phiInv = 0.6180339887498948
-        local phi <const> = (1 + math.sqrt(5)) / 2
-
         -- goldenAngle = 2.399963229728653 radians
         -- or 137.50776405003785 degrees
         -- local goldenAngle <const> = tau / (phi * phi)
@@ -560,7 +570,11 @@ dlg:button {
         if diagOption == "GOLDEN_RECT" then
             gridName = "Golden Rectangle"
 
-            -- Same as phi ^ -1, phi ^ -2, etc.
+            -- phi = 1.618033988749895
+            local phi <const> = (1 + math.sqrt(5)) / 2
+
+            -- phiInv = 0.6180339887498948
+            -- Sequence can be abstracted to phi ^ -1, phi ^ -2...
             local phiInv <const> = 1.0 / phi
             local phiInvE2 <const> = phiInv * phiInv
             local phiInvE3 <const> = phiInvE2 * phiInv
@@ -776,6 +790,8 @@ dlg:button {
                 or defaults.lineCount --[[@as integer]]
             local angOffsetDeg <const> = args.angOffsetDeg
                 or defaults.angOffsetDeg --[[@as integer]]
+            local swirlDeg <const> = args.swirlDeg
+                or defaults.swirlDeg --[[@as integer]]
 
             local invalRequest <const> = ringCount <= 0 and lineCount <= 0
             local rcVerif <const> = invalRequest
@@ -785,11 +801,14 @@ dlg:button {
                 and defaults.lineCount
                 or lineCount
 
-            local angOffsetRad <const> = (useAntialiasVerif
-                    and (angOffsetDeg == 26
-                        or angOffsetDeg == 27))
+            local seekDimetric <const> = (useAntialiasVerif
+                and (angOffsetDeg == 26
+                    or angOffsetDeg == 27))
+            local angOffsetRad <const> = seekDimetric
                 and 0.46364760900081
                 or math.rad(angOffsetDeg)
+            local useSwirl <const> = rcVerif > 1 and swirlDeg ~= 0
+            local swirlRad <const> = math.rad(swirlDeg)
 
             local xMaxRadius <const> = xCorrect * shortEdge * 0.5
             local xMinRadius <const> = rcVerif ~= 0
@@ -801,13 +820,14 @@ dlg:button {
                 and yMaxRadius / rcVerif
                 or yMaxRadius * 0.5
 
+            local jToFac <const> = rcVerif ~= 1
+                and 1.0 / (rcVerif - 1.0)
+                or 1.0
+
             if rcVerif > 0 then
-                local toFac <const> = rcVerif ~= 1
-                    and 1.0 / (rcVerif - 1.0)
-                    or 1.0
-                local i = 0
-                while i < rcVerif do
-                    local t <const> = i * toFac
+                local j = 0
+                while j < rcVerif do
+                    local t <const> = j * jToFac
                     local u <const> = 1.0 - t
                     local xRadius <const> = u * xMinRadius
                         + t * xMaxRadius
@@ -824,25 +844,51 @@ dlg:button {
                         xRadius, yRadius,
                         strokeColor, strokeWeight,
                         useAntialiasVerif)
-                    i = i + 1
+                    j = j + 1
                 end
             end
 
             if lcVerif > 0 then
-                local j = 0
-                while j < lcVerif do
-                    local theta <const> = tau * j / lcVerif - angOffsetRad
-                    local cosTheta <const> = cos(theta)
-                    local sinTheta <const> = sin(theta)
+                local i = 0
+                while i < lcVerif do
+                    local theta0 <const> = tau * i / lcVerif - angOffsetRad
+                    local cosTheta0 <const> = cos(theta0)
+                    local sinTheta0 <const> = sin(theta0)
 
-                    drawLine(context,
-                        xCenter + 0 * cosTheta,
-                        yCenter + 0 * sinTheta,
-                        xCenter + xMaxRadius * cosTheta,
-                        yCenter + yMaxRadius * sinTheta,
-                        strokeColor, strokeWeight)
+                    if useSwirl then
+                        local xo = xCenter
+                        local yo = yCenter
+                        local j = 1
+                        while j < rcVerif do
+                            local t <const> = j * jToFac
+                            local xRadius <const> = t * xMaxRadius
+                            local yRadius <const> = t * yMaxRadius
 
-                    j = j + 1
+                            local theta1 <const> = theta0 + swirlRad * j
+                            local cosTheta1 <const> = cos(theta1)
+                            local sinTheta1 <const> = sin(theta1)
+                            local xd <const> = xCenter + xRadius * cosTheta1
+                            local yd <const> = yCenter + yRadius * sinTheta1
+
+                            drawLine(context,
+                                xo, yo,
+                                xd, yd,
+                                strokeColor, strokeWeight)
+
+                            xo = xd
+                            yo = yd
+                            j = j + 1
+                        end
+                    else
+                        local xd <const> = xCenter + xMaxRadius * cosTheta0
+                        local yd <const> = yCenter + yMaxRadius * sinTheta0
+                        drawLine(context,
+                            xCenter, yCenter,
+                            xd, yd,
+                            strokeColor, strokeWeight)
+                    end
+
+                    i = i + 1
                 end
             end
         elseif diagOption == "RULE_OF_THIRDS" then
