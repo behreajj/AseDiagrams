@@ -1,5 +1,7 @@
 local diagOptions <const> = {
     -- TODO: Phyllotaxis
+    -- TODO: Mobius transformation
+    -- TODO: https://en.wikipedia.org/wiki/Stereographic_projection#Wulff_net
     "GOLDEN_RECT",
     "NESTED_CIRCLES",
     "POLAR_GRID",
@@ -546,14 +548,13 @@ dlg:button {
         local cos <const> = math.cos
         local sin <const> = math.sin
         local tau <const> = math.pi + math.pi
-        -- local phi <const> = (1 + math.sqrt(5)) / 2
-        -- local goldenAngle <const> = tau / (phi * phi)
+        local phi <const> = (1 + math.sqrt(5)) / 2
+        local goldenAngle <const> = tau / (phi * phi)
 
         local gridName = "Layer"
         if diagOption == "GOLDEN_RECT" then
             gridName = "Golden Rectangle"
 
-            local phi <const> = (1.0 + math.sqrt(5.0)) * 0.5
             local phiInv <const> = 1.0 / phi
             local phiInvE2 <const> = phiInv * phiInv
             local phiInvE3 <const> = phiInvE2 * phiInv
@@ -789,6 +790,8 @@ dlg:button {
                     local yRadius <const> = u * yMinRadius
                         + t * yMaxRadius
 
+                    -- TODO: Option to turn this into a spherical grid by
+                    -- scaling the radii appropriately?
                     drawEllipse(
                         context,
                         xCenter, yCenter,
@@ -881,45 +884,27 @@ dlg:button {
                     useAntialiasVerif)
             end
 
-            drawLine(context,
-                xCenter, yCenter + yRadius,
-                xCenter + xRadius, yCenter - yRadius,
-                strokeColor, strokeWeight)
+            local points <const> = {
+                xCenter + xRadius, yCenter,           -- right edge midpoint
+                xCenter + xRadius, yCenter - yRadius, -- top right corner
+                xCenter, yCenter - yRadius,           -- top edge midpoint
+                xCenter - xRadius, yCenter - yRadius, -- top left corner
+                xCenter - xRadius, yCenter,           -- left edge midpoint
+                xCenter - xRadius, yCenter + yRadius, -- bottom left corner
+                xCenter, yCenter + yRadius,           -- bottom edge midpoint
+                xCenter + xRadius, yCenter + yRadius, -- bottom right corner
+            }
+            local lenPoints <const> = #points
 
-            drawLine(context,
-                xCenter, yCenter - yRadius,
-                xCenter + xRadius, yCenter + yRadius,
-                strokeColor, strokeWeight)
-
-            drawLine(context,
-                xCenter, yCenter - yRadius,
-                xCenter - xRadius, yCenter + yRadius,
-                strokeColor, strokeWeight)
-
-            drawLine(context,
-                xCenter + xRadius, yCenter,
-                xCenter - xRadius, yCenter + yRadius,
-                strokeColor, strokeWeight)
-
-            drawLine(context,
-                xCenter + xRadius, yCenter,
-                xCenter - xRadius, yCenter - yRadius,
-                strokeColor, strokeWeight)
-
-            drawLine(context,
-                xCenter, yCenter + yRadius,
-                xCenter - xRadius, yCenter - yRadius,
-                strokeColor, strokeWeight)
-
-            drawLine(context,
-                xCenter - xRadius, yCenter,
-                xCenter + xRadius, yCenter + yRadius,
-                strokeColor, strokeWeight)
-
-            drawLine(context,
-                xCenter - xRadius, yCenter,
-                xCenter + xRadius, yCenter - yRadius,
-                strokeColor, strokeWeight)
+            local j = 0
+            while j < lenPoints do
+                local k <const> = (j + 4) % lenPoints
+                drawLine(context,
+                    points[1 + j], points[2 + j],
+                    points[1 + k], points[2 + k],
+                    strokeColor, strokeWeight)
+                j = j + 2
+            end
         elseif diagOption == "SEED_OF_LIFE" then
             gridName = "Seed of Life"
 
@@ -983,6 +968,7 @@ dlg:button {
                 local x0 <const> = xCenter + xRadius * cos(theta0)
                 local y0 <const> = yCenter + yRadius * sin(theta0)
 
+                -- TODO: Make a separate polygon method?
                 drawLine(context, x0, y0,
                     xCenter + xRadius * cos(theta1),
                     yCenter + yRadius * sin(theta1),
