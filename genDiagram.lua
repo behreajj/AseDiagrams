@@ -21,7 +21,6 @@ local layerPlaces <const> = {
 }
 
 local defaults <const> = {
-    -- TODO: Option for active frame only, all frames, range of frames?
     diagOption = "POLAR_GRID",
     strokeWeight = 1,
     swMin = 1,
@@ -791,7 +790,9 @@ dlg:button {
                         + t * yMaxRadius
 
                     -- TODO: Option to turn this into a spherical grid by
-                    -- scaling the radii appropriately?
+                    -- scaling the radii appropriately? Could change t, but
+                    -- would also have to change the min radius.
+                    -- t = math.sqrt(1.0 - math.sqrt(t * t))
                     drawEllipse(
                         context,
                         xCenter, yCenter,
@@ -995,16 +996,19 @@ dlg:button {
         local activeLayer <const> = app.layer
             or sprite.layers[1] --[[@as Layer]]
         local activeFrObj <const> = app.frame
-            or sprite.frames[1] --[[@as Frame]]
+            or frObjs[1] --[[@as Frame]]
 
         app.transaction("Diagram", function()
             local gridLayer <const> = sprite:newLayer()
 
+            -- There could be an option to choose active or range frames
+            -- instead of all. However, the control flow for this is finicky.
+            -- Getting those frames outside the transaction immediately above
+            -- results in inappropriately offset frames.
             local k = 0
             while k < lenFrObjs do
                 k = k + 1
-                local frObj <const> = frObjs[k]
-                sprite:newCel(gridLayer, frObj, image, Point(0, 0))
+                sprite:newCel(gridLayer, k, image, Point(0, 0))
             end
 
             gridLayer.name = gridName
