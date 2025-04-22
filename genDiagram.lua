@@ -33,6 +33,11 @@ local defaults <const> = {
     xOffset = 0,
     yOffset = 0,
 
+    -- Dimetric grid:
+    dimetricCount = 12,
+    minDimetric = 1,
+    maxDimetric = 32,
+
     -- Nested circles:
     nestedCount = 6,
     minNest = 3,
@@ -243,10 +248,13 @@ dlg:combobox {
     onchange = function()
         local args <const> = dlg.data
         local diagOption <const> = args.diagOption
+        local isDimetric <const> = diagOption == "DIMETRIC_GRID"
         local isNest <const> = diagOption == "NESTED_CIRCLES"
         local isPolar <const> = diagOption == "POLAR_GRID"
         local isSand <const> = diagOption == "SAND_RECKONER"
         local isStar <const> = diagOption == "STAR"
+
+        dlg:modify { id = "dimetricCount", visible = isDimetric }
 
         dlg:modify { id = "nestedCount", visible = isNest }
         dlg:modify { id = "showMeasure", visible = isNest }
@@ -262,6 +270,18 @@ dlg:combobox {
         dlg:modify { id = "sidesStar", visible = isStar }
         dlg:modify { id = "angStarDeg", visible = isStar }
     end,
+}
+
+dlg:newrow { always = false }
+
+dlg:slider {
+    id = "dimetricCount",
+    label = "Count:",
+    value = defaults.dimetricCount,
+    min = defaults.minDimetric,
+    max = defaults.maxDimetric,
+    focus = false,
+    visible = defaults.diagOption == "DIMETRIC_GRID",
 }
 
 dlg:newrow { always = false }
@@ -561,28 +581,28 @@ dlg:button {
         if diagOption == "DIMETRIC_GRID" then
             gridName = "Dimetric Grid"
 
-            local dimetricCount <const> = 16
+            local dimetricCount <const> = args.dimetricCount
+                or defaults.dimetricCount --[[@as integer]]
 
-            local xRadius <const> = shortEdge * 0.5
-            local yRadius <const> = shortEdge * 0.5
+            local count <const> = 1 + math.max(1, math.abs(dimetricCount))
+            local halfEdge <const> = shortEdge * 0.5
+            local qrtrEdge <const> = shortEdge * 0.25
 
             local i = 0
-            while i < dimetricCount do
-                local t <const> = i / (dimetricCount - 1.0)
-                local u <const> = 1.0 - t
+            while i < count do
+                local t <const> = i / (count - 1.0)
+                local so <const> = t * shortEdge - halfEdge
+                local soHalf <const> = 0.5 * so
 
-                local xso0 <const> = u * -xRadius + t * xRadius
-                local yso1 <const> = u * -yRadius + t * yRadius
+                local xro0 <const> = so + halfEdge
+                local yro0 <const> = soHalf - qrtrEdge
+                local xrd0 <const> = so - halfEdge
+                local yrd0 <const> = soHalf + qrtrEdge
 
-                local xro0 <const> = xso0 + yRadius
-                local yro0 <const> = 0.5 * xso0 - 0.5 * yRadius
-                local xrd0 <const> = xso0 - yRadius
-                local yrd0 <const> = 0.5 * xso0 + 0.5 * yRadius
-
-                local xro1 <const> = -xRadius - yso1
-                local yro1 <const> = 0.5 * -xRadius + 0.5 * yso1
-                local xrd1 <const> = xRadius - yso1
-                local yrd1 <const> = 0.5 * xRadius + 0.5 * yso1
+                local xro1 <const> = -halfEdge - so
+                local yro1 <const> = soHalf - qrtrEdge
+                local xrd1 <const> = halfEdge - so
+                local yrd1 <const> = qrtrEdge + soHalf
 
                 drawLine(context,
                     xCenter + xCorrect * xro0, yCenter + yCorrect * yro0,

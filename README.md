@@ -24,6 +24,10 @@ Many diagrams were influenced by [Zak Korvin](https://www.youtube.com/@ZKorvin)'
 
 The script supports the creation of the following diagrams:
 
+![Dimetric Grid](dimetricGrid.png)
+
+Dimetric Grid
+
 ![Golden Rectangle](goldenRect.png)
 
 Golden Rectangle
