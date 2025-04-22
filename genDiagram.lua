@@ -1,5 +1,6 @@
 local diagOptions <const> = {
-    -- phyllotaxis, stereographic projection?
+    -- vesica piscis, phyllotaxis, stereographic projection?
+    "DIMETRIC_GRID",
     "GOLDEN_RECT",
     "IN_CIRCLE",
     "IN_SQUARE",
@@ -557,7 +558,62 @@ dlg:button {
         -- local goldenAngle <const> = tau / (phi * phi)
 
         local gridName = "Layer"
-        if diagOption == "GOLDEN_RECT" then
+        if diagOption == "DIMETRIC_GRID" then
+            gridName = "Dimetric Grid"
+
+            local dimetricCount <const> = 16
+
+            local xRadius <const> = xCorrect * shortEdge * 0.5
+            local yRadius <const> = yCorrect * shortEdge * 0.5
+
+            local i = 0
+            while i < dimetricCount do
+                local t <const> = i / (dimetricCount - 1.0)
+                local u <const> = 1.0 - t
+
+                local xso0 <const> = u * -xRadius + t * xRadius
+                local yso0 <const> = -yRadius
+                local xsd0 <const> = xso0
+                local ysd0 <const> = yRadius
+
+                local xso1 <const> = -xRadius
+                local yso1 <const> = u * -yRadius + t * yRadius
+                local xsd1 <const> = xRadius
+                local ysd1 <const> = yso1
+
+                local xro0 <const> = xso0 - yso0
+                local yro0 <const> = 0.5 * xso0 + 0.5 * yso0
+                local xrd0 <const> = xsd0 - ysd0
+                local yrd0 <const> = 0.5 * xsd0 + 0.5 * ysd0
+
+                local xro1 <const> = xso1 - yso1
+                local yro1 <const> = 0.5 * xso1 + 0.5 * yso1
+                local xrd1 <const> = xsd1 - ysd1
+                local yrd1 <const> = 0.5 * xsd1 + 0.5 * ysd1
+
+                -- drawLine(context,
+                --     xCenter + xso0, yCenter + yso0,
+                --     xCenter + xsd0, yCenter + ysd0,
+                --     strokeColor, strokeWeight)
+
+                -- drawLine(context,
+                --     xCenter + xso1, yCenter + yso1,
+                --     xCenter + xsd1, yCenter + ysd1,
+                --     strokeColor, strokeWeight)
+
+                drawLine(context,
+                    xCenter + xro0, yCenter + yro0,
+                    xCenter + xrd0, yCenter + yrd0,
+                    strokeColor, strokeWeight)
+
+                drawLine(context,
+                    xCenter + xro1, yCenter + yro1,
+                    xCenter + xrd1, yCenter + yrd1,
+                    strokeColor, strokeWeight)
+
+                i = i + 1
+            end
+        elseif diagOption == "GOLDEN_RECT" then
             gridName = "Golden Rectangle"
 
             -- Same as phi ^ -1, phi ^ -2, etc.
