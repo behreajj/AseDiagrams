@@ -1,4 +1,5 @@
 local diagOptions <const> = {
+    -- TODO: hex grid?
     -- vesica piscis, phyllotaxis, stereographic projection?
     "DIMETRIC_GRID",
     "GOLDEN_RECT",
@@ -43,6 +44,7 @@ local defaults <const> = {
     minNest = 3,
     maxNest = 12,
     showMeasure = false,
+    -- TODO: Support left and right?
     showBottom = true,
     showTop = true,
 
@@ -66,56 +68,6 @@ local defaults <const> = {
     starMax = 16,
     angStarDeg = 0,
 }
-
----@param context GraphicsContext canvas
----@param xc number center x
----@param yc number center y
----@param w number radius x
----@param h number radius y
----@param quadrant integer
----@param strokeClr Color stroke color
----@param strokeWeight integer stroke weight
----@param useAntialias? boolean use antialias
-local function drawOrthoArc(
-    context,
-    xc, yc, w, h, quadrant,
-    strokeClr, strokeWeight,
-    useAntialias)
-    local useStrokeVerif <const> = strokeWeight > 0
-        and strokeClr.alpha > 0
-    if (not useStrokeVerif) then return end
-
-    local kw <const> = 0.5522847498307936 * w
-    local kh <const> = 0.5522847498307936 * h
-
-    local xcVerif = useAntialias and xc or math.floor(xc)
-    local ycVerif = useAntialias and yc or math.floor(yc)
-    local qVerif <const> = quadrant % 4
-
-    local right <const> = xcVerif + w
-    local left <const> = xcVerif - w
-    local top <const> = ycVerif + h
-    local bottom <const> = ycVerif - h
-
-    context:beginPath()
-    if qVerif == 3 then
-        context:moveTo(right, yc)
-        context:cubicTo(right, yc + kh, xc + kw, top, xc, top)
-    elseif qVerif == 2 then
-        context:moveTo(xc, top)
-        context:cubicTo(xc - kw, top, left, yc + kh, left, yc)
-    elseif qVerif == 1 then
-        context:moveTo(left, yc)
-        context:cubicTo(left, yc - kh, xc - kw, bottom, xc, bottom)
-    else
-        context:moveTo(xc, bottom)
-        context:cubicTo(xc + kw, bottom, right, yc - kh, right, yc)
-    end
-
-    context.strokeWidth = strokeWeight
-    context.color = strokeClr
-    context:stroke()
-end
 
 ---@param context GraphicsContext canvas
 ---@param xc number center x
@@ -178,6 +130,104 @@ local function drawLine(
     context:beginPath()
     context:moveTo(xo, yo)
     context:lineTo(xd, yd)
+    context:closePath()
+
+    context.strokeWidth = strokeWeight
+    context.color = strokeClr
+    context:stroke()
+end
+
+---@param context GraphicsContext canvas
+---@param xc number center x
+---@param yc number center y
+---@param w number radius x
+---@param h number radius y
+---@param quadrant integer quadrant
+---@param strokeClr Color stroke color
+---@param strokeWeight integer stroke weight
+---@param useAntialias? boolean use antialias
+local function drawOrthoArc(
+    context,
+    xc, yc, w, h, quadrant,
+    strokeClr, strokeWeight,
+    useAntialias)
+    local useStrokeVerif <const> = strokeWeight > 0
+        and strokeClr.alpha > 0
+    if (not useStrokeVerif) then return end
+
+    local kw <const> = 0.5522847498307936 * w
+    local kh <const> = 0.5522847498307936 * h
+
+    local xcVerif = useAntialias and xc or math.floor(xc)
+    local ycVerif = useAntialias and yc or math.floor(yc)
+    local qVerif <const> = quadrant % 4
+
+    local right <const> = xcVerif + w
+    local left <const> = xcVerif - w
+    local top <const> = ycVerif + h
+    local bottom <const> = ycVerif - h
+
+    context:beginPath()
+    if qVerif == 3 then
+        context:moveTo(right, yc)
+        context:cubicTo(right, yc + kh, xc + kw, top, xc, top)
+    elseif qVerif == 2 then
+        context:moveTo(xc, top)
+        context:cubicTo(xc - kw, top, left, yc + kh, left, yc)
+    elseif qVerif == 1 then
+        context:moveTo(left, yc)
+        context:cubicTo(left, yc - kh, xc - kw, bottom, xc, bottom)
+    else
+        context:moveTo(xc, bottom)
+        context:cubicTo(xc + kw, bottom, right, yc - kh, right, yc)
+    end
+
+    context.strokeWidth = strokeWeight
+    context.color = strokeClr
+    context:stroke()
+end
+
+---@param context GraphicsContext canvas
+---@param xc number center x
+---@param yc number center y
+---@param w number radius x
+---@param h number radius y
+---@param sides integer sides
+---@param rotation number rotation
+---@param strokeClr Color stroke color
+---@param strokeWeight integer stroke weight
+---@param useAntialias? boolean use antialias
+local function drawPolygon(
+    context,
+    xc, yc, w, h,
+    sides, rotation,
+    strokeClr, strokeWeight,
+    useAntialias)
+    local useStrokeVerif <const> = strokeWeight > 0
+        and strokeClr.alpha > 0
+    if (not useStrokeVerif) then
+        return
+    end
+
+    local xcVerif = useAntialias and xc or math.floor(xc)
+    local ycVerif = useAntialias and yc or math.floor(yc)
+
+    local iToTheta <const> = 6.2831853071796 / sides
+    local cos <const> = math.cos
+    local sin <const> = math.sin
+
+    context:beginPath()
+    context:moveTo(
+        cos(-rotation) * w + xcVerif,
+        ycVerif - sin(-rotation) * h)
+    local i = 0
+    while i < sides do
+        i = i + 1
+        local a <const> = i * iToTheta - rotation
+        context:lineTo(
+            cos(a) * w + xcVerif,
+            ycVerif - sin(a) * h)
+    end
     context:closePath()
 
     context.strokeWidth = strokeWeight
@@ -1039,7 +1089,7 @@ dlg:button {
                 or defaults.angStarDeg --[[@as integer]]
 
             local sidesVerif <const> = math.max(5, math.abs(sidesStar))
-            local angStarRad <const> = math.rad(90 + angStarDeg)
+            local angStarRad <const> = math.rad(270 - angStarDeg)
             local toTheta <const> = tau / sidesVerif
             local skip <const> = math.ceil(sidesVerif / 3)
 
@@ -1048,27 +1098,25 @@ dlg:button {
             local xRadius <const> = xCorrect * shortEdge * 0.5
             local yRadius <const> = yCorrect * shortEdge * 0.5
 
+            drawPolygon(
+                context,
+                xCenter, yCenter,
+                xRadius, yRadius,
+                sidesVerif, angStarRad,
+                strokeColor, strokeWeight,
+                useAntialias)
+
             local i = 0
             while i < sidesVerif do
-                local j <const> = (i + 1) % sidesVerif
-                local k <const> = (i + skip) % sidesVerif
-
+                local j <const> = (i + skip) % sidesVerif
                 local theta0 <const> = i * toTheta - angStarRad
                 local theta1 <const> = j * toTheta - angStarRad
-                local theta2 <const> = k * toTheta - angStarRad
 
-                local x0 <const> = xCenter + xRadius * cos(theta0)
-                local y0 <const> = yCenter + yRadius * sin(theta0)
-
-                -- TODO: Make a separate polygon method?
-                drawLine(context, x0, y0,
+                drawLine(context,
+                    xCenter + xRadius * cos(theta0),
+                    yCenter - yRadius * sin(theta0),
                     xCenter + xRadius * cos(theta1),
-                    yCenter + yRadius * sin(theta1),
-                    strokeColor, strokeWeight)
-
-                drawLine(context, x0, y0,
-                    xCenter + xRadius * cos(theta2),
-                    yCenter + yRadius * sin(theta2),
+                    yCenter - yRadius * sin(theta1),
                     strokeColor, strokeWeight)
 
                 i = i + 1
