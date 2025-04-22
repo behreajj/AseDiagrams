@@ -32,6 +32,10 @@ Dimetric Grid
 
 Golden Rectangle
 
+![Hexagon Grid](hexGrid.png)
+
+Hexagon Grid
+
 ![Nested Circles](nestedCircles.png)
 
 Nested Circles

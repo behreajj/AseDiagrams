@@ -1,8 +1,8 @@
 local diagOptions <const> = {
-    -- TODO: hex grid?
     -- vesica piscis, phyllotaxis, stereographic projection?
     "DIMETRIC_GRID",
     "GOLDEN_RECT",
+    "HEX_GRID",
     "IN_CIRCLE",
     "IN_SQUARE",
     "NESTED_CIRCLES",
@@ -38,6 +38,11 @@ local defaults <const> = {
     dimetricCount = 12,
     minDimetric = 1,
     maxDimetric = 32,
+
+    -- Hex grid:
+    hexRings = 4,
+    minRings = 1,
+    maxRings = 32,
 
     -- Nested circles:
     nestedCount = 6,
@@ -299,12 +304,15 @@ dlg:combobox {
         local args <const> = dlg.data
         local diagOption <const> = args.diagOption
         local isDimetric <const> = diagOption == "DIMETRIC_GRID"
+        local isHex <const> = diagOption == "HEX_GRID"
         local isNest <const> = diagOption == "NESTED_CIRCLES"
         local isPolar <const> = diagOption == "POLAR_GRID"
         local isSand <const> = diagOption == "SAND_RECKONER"
         local isStar <const> = diagOption == "STAR"
 
         dlg:modify { id = "dimetricCount", visible = isDimetric }
+
+        dlg:modify { id = "hexRings", visible = isHex }
 
         dlg:modify { id = "nestedCount", visible = isNest }
         dlg:modify { id = "showMeasure", visible = isNest }
@@ -332,6 +340,18 @@ dlg:slider {
     max = defaults.maxDimetric,
     focus = false,
     visible = defaults.diagOption == "DIMETRIC_GRID",
+}
+
+dlg:newrow { always = false }
+
+dlg:slider {
+    id = "hexRings",
+    label = "Rings:",
+    value = defaults.hexRings,
+    min = defaults.minRings,
+    max = defaults.maxRings,
+    focus = false,
+    visible = defaults.diagOption == "HEX_GRID",
 }
 
 dlg:newrow { always = false }
@@ -629,10 +649,10 @@ dlg:button {
 
         local gridName = "Layer"
         if diagOption == "DIMETRIC_GRID" then
-            gridName = "Dimetric Grid"
-
             local dimetricCount <const> = args.dimetricCount
                 or defaults.dimetricCount --[[@as integer]]
+
+            gridName = string.format("Dimetric Grid %d", dimetricCount)
 
             local count <const> = 1 + math.max(1, math.abs(dimetricCount))
             local halfEdge <const> = shortEdge * 0.5
@@ -768,6 +788,59 @@ dlg:button {
                 rx * phiInvE4, ry * phiInvE4, 1,
                 strokeColor, strokeWeight,
                 useAntialiasVerif)
+        elseif diagOption == "HEX_GRID" then
+            local rings <const> = args.hexRings
+                or defaults.hexRings --[[@as integer]]
+
+            gridName = string.format("Hexagon Grid %d", rings)
+
+            local iMax <const> = rings - 1
+            local iMin <const> = -iMax
+
+            local halfEdge <const> = shortEdge * 0.5
+            local radius <const> = halfEdge / (rings * 2 - 1)
+            local extent <const> = radius * 1.7320508075688772
+            local xRadius <const> = xCorrect * radius
+            local xHalfExt <const> = xCorrect * extent * 0.5
+            local yRadius <const> = yCorrect * radius
+            local yRad1_5 <const> = yCorrect * radius * 1.5
+            local orientation <const> = math.pi * 3 / 2
+
+            if rings > 1 then
+                drawPolygon(
+                    context,
+                    xCenter, yCenter,
+                    xCorrect * halfEdge, yCorrect * halfEdge,
+                    6, orientation,
+                    strokeColor, strokeWeight,
+                    useAntialiasVerif)
+            end
+
+            local i = iMin - 1
+            while i < iMax do
+                i = i + 1
+
+                local jMin = iMin
+                local jMax = iMax
+                if i < 0 then jMin = jMin - i end
+                if i > 0 then jMax = jMax - i end
+                local iExt <const> = i * xCorrect * extent
+
+                local j = jMin - 1
+                while j < jMax do
+                    j = j + 1
+
+                    local x <const> = xCenter + iExt + j * xHalfExt
+                    local y <const> = yCenter + j * yRad1_5
+                    drawPolygon(
+                        context,
+                        x, y,
+                        xRadius, yRadius,
+                        6, orientation,
+                        strokeColor, strokeWeight,
+                        useAntialiasVerif)
+                end
+            end
         elseif diagOption == "IN_CIRCLE" then
             gridName = "In Circle"
 
