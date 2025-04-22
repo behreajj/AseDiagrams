@@ -43,6 +43,7 @@ local defaults <const> = {
     hexRings = 4,
     minRings = 1,
     maxRings = 32,
+    useDimetric = false,
 
     -- Nested circles:
     nestedCount = 6,
@@ -313,6 +314,7 @@ dlg:combobox {
         dlg:modify { id = "dimetricCount", visible = isDimetric }
 
         dlg:modify { id = "hexRings", visible = isHex }
+        dlg:modify { id = "useDimetric", visible = isHex }
 
         dlg:modify { id = "nestedCount", visible = isNest }
         dlg:modify { id = "showMeasure", visible = isNest }
@@ -350,6 +352,17 @@ dlg:slider {
     value = defaults.hexRings,
     min = defaults.minRings,
     max = defaults.maxRings,
+    focus = false,
+    visible = defaults.diagOption == "HEX_GRID",
+}
+
+dlg:newrow { always = false }
+
+dlg:check {
+    id = "useDimetric",
+    label = "Scale:",
+    text = "Dimetric",
+    selected = defaults.useDimetric,
     focus = false,
     visible = defaults.diagOption == "HEX_GRID",
 }
@@ -791,17 +804,23 @@ dlg:button {
         elseif diagOption == "HEX_GRID" then
             local rings <const> = args.hexRings
                 or defaults.hexRings --[[@as integer]]
+            local useDimetric <const> = args.useDimetric --[[@as boolean]]
 
             gridName = string.format("Hexagon Grid %d", rings)
 
             local iMax <const> = rings - 1
             local iMin <const> = -iMax
 
+            -- sqrt(3) / 2 = 0.8660254
+            local dimScale <const> = useDimetric
+                and (1.1547005383793 * xCorrect)
+                or xCorrect
             local halfEdge <const> = shortEdge * 0.5
             local radius <const> = halfEdge / (rings * 2 - 1)
             local extent <const> = radius * 1.7320508075688772
-            local xRadius <const> = xCorrect * radius
-            local xHalfExt <const> = xCorrect * extent * 0.5
+            local xRadius <const> = dimScale * radius
+            local xHalfExt <const> = dimScale * extent * 0.5
+            local xCorrExt <const> = dimScale * extent
             local yRadius <const> = yCorrect * radius
             local yRad1_5 <const> = yCorrect * radius * 1.5
             local orientation <const> = math.pi * 3 / 2
@@ -810,7 +829,8 @@ dlg:button {
                 drawPolygon(
                     context,
                     xCenter, yCenter,
-                    xCorrect * halfEdge, yCorrect * halfEdge,
+                    dimScale * halfEdge,
+                    yCorrect * halfEdge,
                     6, orientation,
                     strokeColor, strokeWeight,
                     useAntialiasVerif)
@@ -824,7 +844,7 @@ dlg:button {
                 local jMax = iMax
                 if i < 0 then jMin = jMin - i end
                 if i > 0 then jMax = jMax - i end
-                local iExt <const> = i * xCorrect * extent
+                local iExt <const> = i * xCorrExt
 
                 local j = jMin - 1
                 while j < jMax do
