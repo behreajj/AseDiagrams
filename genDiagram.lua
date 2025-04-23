@@ -1,6 +1,7 @@
 local diagOptions <const> = {
     -- vesica piscis, phyllotaxis, stereographic projection?
     "DIMETRIC_GRID",
+    "EGG",
     "GOLDEN_RECT",
     "HEX_GRID",
     "IN_CIRCLE",
@@ -50,7 +51,6 @@ local defaults <const> = {
     minNest = 3,
     maxNest = 12,
     showMeasure = false,
-    -- TODO: Support left and right?
     showBottom = true,
     showTop = true,
 
@@ -699,6 +699,77 @@ dlg:button {
 
                 i = i + 1
             end
+        elseif diagOption == "EGG" then
+            gridName = "Egg"
+
+            local sqrt3 <const> = 1.7320508075689
+            local sqrt2 <const> = 1.4142135623731
+            local halfEdge <const> = shortEdge * 0.5
+            local qrtrEdge <const> = shortEdge * 0.25
+
+            local figureHeight <const> = yCorrect * qrtrEdge
+                + yCorrect * qrtrEdge / sqrt3
+            local yDisplace <const> = figureHeight * 0.25
+
+            drawEllipse(
+                context,
+                xCenter, yCenter + yDisplace,
+                xCorrect * qrtrEdge, yCorrect * qrtrEdge,
+                strokeColor, strokeWeight,
+                useAntialiasVerif)
+
+            -- Horizontal line.
+            drawLine(context,
+                xCenter - xCorrect * qrtrEdge, yCenter + yDisplace,
+                xCenter + xCorrect * qrtrEdge, yCenter + yDisplace,
+                strokeColor, strokeWeight)
+
+            -- Double sized arcs.
+            drawOrthoArc(
+                context,
+                xCenter + xCorrect * qrtrEdge, yCenter + yDisplace,
+                xCorrect * halfEdge, yCorrect * halfEdge, 1,
+                strokeColor, strokeWeight,
+                useAntialiasVerif)
+
+            drawOrthoArc(
+                context,
+                xCenter - xCorrect * qrtrEdge, yCenter + yDisplace,
+                xCorrect * halfEdge, yCorrect * halfEdge, 0,
+                strokeColor, strokeWeight,
+                useAntialiasVerif)
+
+            -- Vertical line.
+            drawLine(context,
+                xCenter,
+                yCenter + yDisplace,
+                xCenter,
+                yCenter - yCorrect * qrtrEdge * sqrt3 + yDisplace,
+                strokeColor, strokeWeight)
+
+            -- Diagonal lines.
+            drawLine(context,
+                xCenter - xCorrect * qrtrEdge,
+                yCenter + yDisplace,
+                xCenter + xCorrect * qrtrEdge - xCorrect * qrtrEdge / sqrt3,
+                yCenter - yCorrect * qrtrEdge * sqrt2 + yDisplace,
+                strokeColor, strokeWeight)
+
+            drawLine(context,
+                xCenter + xCorrect * qrtrEdge,
+                yCenter + yDisplace,
+                xCenter - xCorrect * qrtrEdge + xCorrect * qrtrEdge / sqrt3,
+                yCenter - yCorrect * qrtrEdge * sqrt2 + yDisplace,
+                strokeColor, strokeWeight)
+
+            drawEllipse(
+                context,
+                xCenter,
+                yCenter - yCorrect * qrtrEdge + yDisplace,
+                xCorrect * qrtrEdge / sqrt3,
+                yCorrect * qrtrEdge / sqrt3,
+                strokeColor, strokeWeight,
+                useAntialiasVerif)
         elseif diagOption == "GOLDEN_RECT" then
             gridName = "Golden Rectangle"
 
