@@ -30,6 +30,7 @@ local defaults <const> = {
     swMax = 32,
     strokeAbgr32 = 0xffffffff,
     useAntialias = true,
+    useTrimAlpha = true,
     layerPlace = "BOTTOM",
 
     xOffset = 0,
@@ -552,6 +553,13 @@ dlg:check {
     focus = false,
 }
 
+dlg:check {
+    id = "useTrimAlpha",
+    text = "Trim",
+    selected = defaults.useTrimAlpha,
+    focus = false,
+}
+
 dlg:newrow { always = false }
 
 dlg:combobox {
@@ -628,6 +636,7 @@ dlg:button {
         local strokeColor <const> = args.strokeColor
             or abgr32ToAseColor(defaults.strokeAbgr32) --[[@as Color]]
         local useAntialias <const> = args.useAntialias --[[@as boolean]]
+        local useTrimAlpha <const> = args.useTrimAlpha --[[@as boolean]]
         local layerPlace <const> = args.layerPlace
             or defaults.layerPlace --[[@as string]]
 
@@ -1384,6 +1393,28 @@ dlg:button {
         local activeFrObj <const> = app.frame
             or frObjs[1] --[[@as Frame]]
 
+        local xtl = 0
+        local ytl = 0
+        local trgImg = image
+        if useTrimAlpha then
+            local alphaIndex <const> = spriteSpec.transparentColor
+            local rect <const> = image:shrinkBounds(alphaIndex)
+            if rect.width > 0 and rect.height > 0 then
+                xtl = rect.x
+                ytl = rect.y
+
+                local trSpec <const> = ImageSpec {
+                    width = rect.width,
+                    height = rect.height,
+                    colorMode = colorMode,
+                    transparentColor = alphaIndex
+                }
+                trSpec.colorSpace = spriteSpec.colorSpace
+                trgImg = Image(trSpec)
+                trgImg:drawImage(image, Point(-xtl, -ytl), 255, BlendMode.SRC)
+            end
+        end
+
         app.transaction("Diagram", function()
             local gridLayer <const> = sprite:newLayer()
 
@@ -1394,7 +1425,7 @@ dlg:button {
             local k = 0
             while k < lenFrObjs do
                 k = k + 1
-                sprite:newCel(gridLayer, k, image, Point(0, 0))
+                sprite:newCel(gridLayer, k, trgImg, Point(xtl, ytl))
             end
 
             gridLayer.name = gridName
