@@ -770,6 +770,65 @@ dlg:button {
                 yCorrect * qrtrEdge / sqrt3,
                 strokeColor, strokeWeight,
                 useAntialiasVerif)
+
+            context:beginPath()
+            context:moveTo(xCenter + xCorrect * qrtrEdge, yCenter + yDisplace)
+            context:cubicTo(
+                xCenter + xCorrect * qrtrEdge,
+                yCenter + yDisplace - yCorrect * halfEdge * 0.26521654,
+
+                xCenter + xCorrect * halfEdge * 0.39464325,
+                yCenter + yDisplace - yCorrect * halfEdge * 0.51957039,
+
+                xCenter + xCorrect * halfEdge * 0.20710682,
+                yCenter + yDisplace - yCorrect * halfEdge * 0.70710682
+            )
+
+            context:cubicTo(
+                xCenter + xCorrect * halfEdge * 0.09138951,
+                yCenter + yDisplace - yCorrect * halfEdge * 0.81685876,
+
+                xCenter + xCorrect * halfEdge * -0.09138951,
+                yCenter + yDisplace - yCorrect * halfEdge * 0.81685876,
+
+                xCenter + xCorrect * halfEdge * -0.20710682,
+                yCenter + yDisplace - yCorrect * halfEdge * 0.70710682
+            )
+
+            context:cubicTo(
+                xCenter + xCorrect * halfEdge * -0.39464325,
+                yCenter + yDisplace - yCorrect * halfEdge * 0.51957039,
+
+                xCenter + xCorrect * halfEdge * -0.5,
+                yCenter + yDisplace - yCorrect * halfEdge * 0.26521654,
+
+                xCenter + xCorrect * halfEdge * -0.5,
+                yCenter + yDisplace
+            )
+
+            context:cubicTo(
+                xCenter + xCorrect * halfEdge * -0.5,
+                yCenter + yDisplace - yCorrect * halfEdge * -0.27614233,
+
+                xCenter + xCorrect * halfEdge * -0.27614233,
+                yCenter + yDisplace - yCorrect * halfEdge * -0.5,
+
+                xCenter + xCorrect * halfEdge * 0.0,
+                yCenter + yDisplace - yCorrect * halfEdge * -0.5
+            )
+
+            context:cubicTo(
+                xCenter + xCorrect * halfEdge * 0.27614233,
+                yCenter + yDisplace - yCorrect * halfEdge * -0.5,
+
+                xCenter + xCorrect * halfEdge * 0.5,
+                yCenter + yDisplace - yCorrect * halfEdge * -0.27614233,
+
+                xCenter + xCorrect * halfEdge * 0.5,
+                yCenter + yDisplace
+            )
+            context:closePath()
+            context:stroke()
         elseif diagOption == "GOLDEN_RECT" then
             gridName = "Golden Rectangle"
 
