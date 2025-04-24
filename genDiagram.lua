@@ -40,6 +40,10 @@ local defaults <const> = {
     minDimetric = 1,
     maxDimetric = 32,
 
+    -- Egg:
+    drawConstruct = true,
+    drawFigure = false,
+
     -- Hex grid:
     hexRings = 4,
     minRings = 1,
@@ -305,6 +309,7 @@ dlg:combobox {
         local args <const> = dlg.data
         local diagOption <const> = args.diagOption
         local isDimetric <const> = diagOption == "DIMETRIC_GRID"
+        local isEgg <const> = diagOption == "EGG"
         local isHex <const> = diagOption == "HEX_GRID"
         local isNest <const> = diagOption == "NESTED_CIRCLES"
         local isPolar <const> = diagOption == "POLAR_GRID"
@@ -312,6 +317,9 @@ dlg:combobox {
         local isStar <const> = diagOption == "STAR"
 
         dlg:modify { id = "dimetricCount", visible = isDimetric }
+
+        dlg:modify { id = "drawConstruct", visible = isEgg }
+        dlg:modify { id = "drawFigure", visible = isEgg }
 
         dlg:modify { id = "hexRings", visible = isHex }
         dlg:modify { id = "useDimetric", visible = isHex }
@@ -342,6 +350,25 @@ dlg:slider {
     max = defaults.maxDimetric,
     focus = false,
     visible = defaults.diagOption == "DIMETRIC_GRID",
+}
+
+dlg:newrow { always = false }
+
+dlg:check {
+    id = "drawConstruct",
+    label = "Draw:",
+    text = "Guides",
+    selected = defaults.drawConstruct,
+    focus = false,
+    visible = defaults.diagOption == "EGG",
+}
+
+dlg:check {
+    id = "drawFigure",
+    text = "Figure",
+    selected = defaults.drawFigure,
+    focus = false,
+    visible = defaults.diagOption == "EGG",
 }
 
 dlg:newrow { always = false }
@@ -702,133 +729,147 @@ dlg:button {
         elseif diagOption == "EGG" then
             gridName = "Egg"
 
+            local drawConstruct = args.drawConstruct --[[@as boolean]]
+            local drawFigure = args.drawFigure --[[@as boolean]]
+
             local sqrt3 <const> = 1.7320508075689
             local sqrt2 <const> = 1.4142135623731
             local halfEdge <const> = shortEdge * 0.5
             local qrtrEdge <const> = shortEdge * 0.25
+            local qrtrRt3 <const> = qrtrEdge / sqrt3
 
-            local figureHeight <const> = yCorrect * qrtrEdge
-                + yCorrect * qrtrEdge / sqrt3
-            local yDisplace <const> = figureHeight * 0.25
+            local figureHeight <const> = yCorrect * halfEdge
+                + yCorrect * qrtrRt3
+            local yDisplace <const> = figureHeight * 0.125
 
-            drawEllipse(
-                context,
-                xCenter, yCenter + yDisplace,
-                xCorrect * qrtrEdge, yCorrect * qrtrEdge,
-                strokeColor, strokeWeight,
-                useAntialiasVerif)
+            local drawConstVerif = drawConstruct
+            local drawFigVerif = drawFigure
+            if (not drawConstruct) and (not drawFigure) then
+                drawConstVerif = true
+                drawFigVerif = false
+            end
 
-            -- Horizontal line.
-            drawLine(context,
-                xCenter - xCorrect * qrtrEdge, yCenter + yDisplace,
-                xCenter + xCorrect * qrtrEdge, yCenter + yDisplace,
-                strokeColor, strokeWeight)
+            if drawConstVerif then
+                drawEllipse(
+                    context,
+                    xCenter, yCenter + yDisplace,
+                    xCorrect * qrtrEdge, yCorrect * qrtrEdge,
+                    strokeColor, strokeWeight,
+                    useAntialiasVerif)
 
-            -- Double sized arcs.
-            drawOrthoArc(
-                context,
-                xCenter + xCorrect * qrtrEdge, yCenter + yDisplace,
-                xCorrect * halfEdge, yCorrect * halfEdge, 1,
-                strokeColor, strokeWeight,
-                useAntialiasVerif)
+                drawLine(context,
+                    xCenter - xCorrect * qrtrEdge, yCenter + yDisplace,
+                    xCenter + xCorrect * qrtrEdge, yCenter + yDisplace,
+                    strokeColor, strokeWeight)
 
-            drawOrthoArc(
-                context,
-                xCenter - xCorrect * qrtrEdge, yCenter + yDisplace,
-                xCorrect * halfEdge, yCorrect * halfEdge, 0,
-                strokeColor, strokeWeight,
-                useAntialiasVerif)
+                drawOrthoArc(
+                    context,
+                    xCenter + xCorrect * qrtrEdge, yCenter + yDisplace,
+                    xCorrect * halfEdge, yCorrect * halfEdge, 1,
+                    strokeColor, strokeWeight,
+                    useAntialiasVerif)
 
-            -- Vertical line.
-            drawLine(context,
-                xCenter,
-                yCenter + yDisplace,
-                xCenter,
-                yCenter - yCorrect * qrtrEdge * sqrt3 + yDisplace,
-                strokeColor, strokeWeight)
+                drawOrthoArc(
+                    context,
+                    xCenter - xCorrect * qrtrEdge, yCenter + yDisplace,
+                    xCorrect * halfEdge, yCorrect * halfEdge, 0,
+                    strokeColor, strokeWeight,
+                    useAntialiasVerif)
 
-            -- Diagonal lines.
-            drawLine(context,
-                xCenter - xCorrect * qrtrEdge,
-                yCenter + yDisplace,
-                xCenter + xCorrect * qrtrEdge - xCorrect * qrtrEdge / sqrt3,
-                yCenter - yCorrect * qrtrEdge * sqrt2 + yDisplace,
-                strokeColor, strokeWeight)
+                drawLine(context,
+                    xCenter,
+                    yCenter + yDisplace,
+                    xCenter,
+                    yCenter - yCorrect * qrtrEdge * sqrt3 + yDisplace,
+                    strokeColor, strokeWeight)
 
-            drawLine(context,
-                xCenter + xCorrect * qrtrEdge,
-                yCenter + yDisplace,
-                xCenter - xCorrect * qrtrEdge + xCorrect * qrtrEdge / sqrt3,
-                yCenter - yCorrect * qrtrEdge * sqrt2 + yDisplace,
-                strokeColor, strokeWeight)
+                drawLine(context,
+                    xCenter - xCorrect * qrtrEdge,
+                    yCenter + yDisplace,
+                    xCenter + xCorrect * qrtrEdge - xCorrect * qrtrRt3,
+                    yCenter - yCorrect * qrtrEdge * sqrt2 + yDisplace,
+                    strokeColor, strokeWeight)
 
-            drawEllipse(
-                context,
-                xCenter,
-                yCenter - yCorrect * qrtrEdge + yDisplace,
-                xCorrect * qrtrEdge / sqrt3,
-                yCorrect * qrtrEdge / sqrt3,
-                strokeColor, strokeWeight,
-                useAntialiasVerif)
+                drawLine(context,
+                    xCenter + xCorrect * qrtrEdge,
+                    yCenter + yDisplace,
+                    xCenter - xCorrect * qrtrEdge + xCorrect * qrtrRt3,
+                    yCenter - yCorrect * qrtrEdge * sqrt2 + yDisplace,
+                    strokeColor, strokeWeight)
 
-            context:beginPath()
-            context:moveTo(xCenter + xCorrect * qrtrEdge, yCenter + yDisplace)
-            context:cubicTo(
-                xCenter + xCorrect * qrtrEdge,
-                yCenter + yDisplace - yCorrect * halfEdge * 0.26521654,
+                drawEllipse(
+                    context,
+                    xCenter,
+                    yCenter - yCorrect * qrtrEdge + yDisplace,
+                    xCorrect * qrtrRt3,
+                    yCorrect * qrtrRt3,
+                    strokeColor, strokeWeight,
+                    useAntialiasVerif)
+            end
 
-                xCenter + xCorrect * halfEdge * 0.39464325,
-                yCenter + yDisplace - yCorrect * halfEdge * 0.51957039,
+            if drawFigVerif then
+                context:beginPath()
+                context:moveTo(xCenter + xCorrect * qrtrEdge, yCenter + yDisplace)
+                context:cubicTo(
+                    xCenter + xCorrect * qrtrEdge,
+                    yCenter + yDisplace - yCorrect * halfEdge * 0.26521654,
 
-                xCenter + xCorrect * halfEdge * 0.20710682,
-                yCenter + yDisplace - yCorrect * halfEdge * 0.70710682
-            )
+                    xCenter + xCorrect * halfEdge * 0.39464325,
+                    yCenter + yDisplace - yCorrect * halfEdge * 0.51957039,
 
-            context:cubicTo(
-                xCenter + xCorrect * halfEdge * 0.09138951,
-                yCenter + yDisplace - yCorrect * halfEdge * 0.81685876,
+                    xCenter + xCorrect * halfEdge * 0.20710682,
+                    yCenter + yDisplace - yCorrect * halfEdge * 0.70710682
+                )
 
-                xCenter + xCorrect * halfEdge * -0.09138951,
-                yCenter + yDisplace - yCorrect * halfEdge * 0.81685876,
+                context:cubicTo(
+                    xCenter + xCorrect * halfEdge * 0.09138951,
+                    yCenter + yDisplace - yCorrect * halfEdge * 0.81685876,
 
-                xCenter + xCorrect * halfEdge * -0.20710682,
-                yCenter + yDisplace - yCorrect * halfEdge * 0.70710682
-            )
+                    xCenter + xCorrect * halfEdge * -0.09138951,
+                    yCenter + yDisplace - yCorrect * halfEdge * 0.81685876,
 
-            context:cubicTo(
-                xCenter + xCorrect * halfEdge * -0.39464325,
-                yCenter + yDisplace - yCorrect * halfEdge * 0.51957039,
+                    xCenter + xCorrect * halfEdge * -0.20710682,
+                    yCenter + yDisplace - yCorrect * halfEdge * 0.70710682
+                )
 
-                xCenter + xCorrect * halfEdge * -0.5,
-                yCenter + yDisplace - yCorrect * halfEdge * 0.26521654,
+                context:cubicTo(
+                    xCenter + xCorrect * halfEdge * -0.39464325,
+                    yCenter + yDisplace - yCorrect * halfEdge * 0.51957039,
 
-                xCenter + xCorrect * halfEdge * -0.5,
-                yCenter + yDisplace
-            )
+                    xCenter - xCorrect * qrtrEdge,
+                    yCenter + yDisplace - yCorrect * halfEdge * 0.26521654,
 
-            context:cubicTo(
-                xCenter + xCorrect * halfEdge * -0.5,
-                yCenter + yDisplace - yCorrect * halfEdge * -0.27614233,
+                    xCenter - xCorrect * qrtrEdge,
+                    yCenter + yDisplace
+                )
 
-                xCenter + xCorrect * halfEdge * -0.27614233,
-                yCenter + yDisplace - yCorrect * halfEdge * -0.5,
+                context:cubicTo(
+                    xCenter - xCorrect * qrtrEdge,
+                    yCenter + yDisplace - yCorrect * halfEdge * -0.27614233,
 
-                xCenter + xCorrect * halfEdge * 0.0,
-                yCenter + yDisplace - yCorrect * halfEdge * -0.5
-            )
+                    xCenter + xCorrect * halfEdge * -0.27614233,
+                    yCenter + yDisplace + yCorrect * qrtrEdge,
 
-            context:cubicTo(
-                xCenter + xCorrect * halfEdge * 0.27614233,
-                yCenter + yDisplace - yCorrect * halfEdge * -0.5,
+                    xCenter + xCorrect * halfEdge * 0.0,
+                    yCenter + yDisplace + yCorrect * qrtrEdge
+                )
 
-                xCenter + xCorrect * halfEdge * 0.5,
-                yCenter + yDisplace - yCorrect * halfEdge * -0.27614233,
+                context:cubicTo(
+                    xCenter + xCorrect * halfEdge * 0.27614233,
+                    yCenter + yDisplace + yCorrect * qrtrEdge,
 
-                xCenter + xCorrect * halfEdge * 0.5,
-                yCenter + yDisplace
-            )
-            context:closePath()
-            context:stroke()
+                    xCenter + xCorrect * qrtrEdge,
+                    yCenter + yDisplace - yCorrect * halfEdge * -0.27614233,
+
+                    xCenter + xCorrect * qrtrEdge,
+                    yCenter + yDisplace
+                )
+
+                context.strokeWidth = strokeWeight
+                context.color = strokeColor
+                context:closePath()
+                context:stroke()
+            end
         elseif diagOption == "GOLDEN_RECT" then
             gridName = "Golden Rectangle"
 
