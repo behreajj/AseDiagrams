@@ -732,10 +732,10 @@ dlg:button {
             local drawConstruct = args.drawConstruct --[[@as boolean]]
             local drawFigure = args.drawFigure --[[@as boolean]]
 
-            local sqrt3 <const> = 1.7320508075689
-            local sqrt2 <const> = 1.4142135623731
             local halfEdge <const> = shortEdge * 0.5
             local qrtrEdge <const> = shortEdge * 0.25
+            local sqrt3 <const> = 1.7320508075689
+            local sqrt2 <const> = 1.4142135623731
             local qrtrRt3 <const> = qrtrEdge / sqrt3
 
             local figureHeight <const> = yCorrect * halfEdge
@@ -809,61 +809,44 @@ dlg:button {
 
             if drawFigVerif then
                 context:beginPath()
-                context:moveTo(xCenter + xCorrect * qrtrEdge, yCenter + yDisplace)
+                context:moveTo(
+                    xCenter + xCorrect * qrtrEdge,
+                    yCenter + yDisplace)
                 context:cubicTo(
                     xCenter + xCorrect * qrtrEdge,
                     yCenter + yDisplace - yCorrect * halfEdge * 0.26521654,
-
                     xCenter + xCorrect * halfEdge * 0.39464325,
                     yCenter + yDisplace - yCorrect * halfEdge * 0.51957039,
-
                     xCenter + xCorrect * halfEdge * 0.20710682,
-                    yCenter + yDisplace - yCorrect * halfEdge * 0.70710682
-                )
-
+                    yCenter + yDisplace - yCorrect * halfEdge * 0.70710682)
                 context:cubicTo(
                     xCenter + xCorrect * halfEdge * 0.09138951,
                     yCenter + yDisplace - yCorrect * halfEdge * 0.81685876,
-
-                    xCenter + xCorrect * halfEdge * -0.09138951,
+                    xCenter - xCorrect * halfEdge * 0.09138951,
                     yCenter + yDisplace - yCorrect * halfEdge * 0.81685876,
-
-                    xCenter + xCorrect * halfEdge * -0.20710682,
-                    yCenter + yDisplace - yCorrect * halfEdge * 0.70710682
-                )
-
+                    xCenter - xCorrect * halfEdge * 0.20710682,
+                    yCenter + yDisplace - yCorrect * halfEdge * 0.70710682)
                 context:cubicTo(
-                    xCenter + xCorrect * halfEdge * -0.39464325,
+                    xCenter - xCorrect * halfEdge * 0.39464325,
                     yCenter + yDisplace - yCorrect * halfEdge * 0.51957039,
-
                     xCenter - xCorrect * qrtrEdge,
                     yCenter + yDisplace - yCorrect * halfEdge * 0.26521654,
-
                     xCenter - xCorrect * qrtrEdge,
-                    yCenter + yDisplace
-                )
-
+                    yCenter + yDisplace)
                 context:cubicTo(
                     xCenter - xCorrect * qrtrEdge,
-                    yCenter + yDisplace - yCorrect * halfEdge * -0.27614233,
-
-                    xCenter + xCorrect * halfEdge * -0.27614233,
+                    yCenter + yDisplace + yCorrect * halfEdge * 0.27614233,
+                    xCenter - xCorrect * halfEdge * 0.27614233,
                     yCenter + yDisplace + yCorrect * qrtrEdge,
-
-                    xCenter + xCorrect * halfEdge * 0.0,
-                    yCenter + yDisplace + yCorrect * qrtrEdge
-                )
-
+                    xCenter,
+                    yCenter + yDisplace + yCorrect * qrtrEdge)
                 context:cubicTo(
                     xCenter + xCorrect * halfEdge * 0.27614233,
                     yCenter + yDisplace + yCorrect * qrtrEdge,
-
                     xCenter + xCorrect * qrtrEdge,
-                    yCenter + yDisplace - yCorrect * halfEdge * -0.27614233,
-
+                    yCenter + yDisplace + yCorrect * halfEdge * 0.27614233,
                     xCenter + xCorrect * qrtrEdge,
-                    yCenter + yDisplace
-                )
+                    yCenter + yDisplace)
 
                 context.strokeWidth = strokeWeight
                 context.color = strokeColor
