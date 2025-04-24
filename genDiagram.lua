@@ -411,7 +411,7 @@ dlg:newrow { always = false }
 dlg:check {
     id = "showMeasure",
     label = "Show:",
-    text = "Measure",
+    text = "Guides",
     selected = defaults.showMeasure,
     focus = false,
     visible = defaults.diagOption == "NESTED_CIRCLES",
