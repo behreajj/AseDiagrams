@@ -42,8 +42,8 @@ local defaults <const> = {
     maxDimetric = 32,
 
     -- Egg:
-    drawConstruct = true,
-    drawFigure = false,
+    drawConstruct = false,
+    drawFigure = true,
     drawMobius = false,
 
     -- Hex grid:
@@ -748,7 +748,8 @@ dlg:button {
 
         local cos <const> = math.cos
         local sin <const> = math.sin
-        local tau <const> = math.pi + math.pi
+        local pi <const> = math.pi
+        local tau <const> = pi + pi
 
         -- phi = 1.618033988749895
         -- phiInv = 0.6180339887498948
@@ -804,15 +805,12 @@ dlg:button {
             local drawMobius <const> = args.drawMobius --[[@as boolean]]
             local drawConstruct <const> = args.drawConstruct --[[@as boolean]]
 
+            -- Scale by 1/1.0388889 so that mobius figure fits?
             local halfEdge <const> = shortEdge * 0.5
             local qrtrEdge <const> = shortEdge * 0.25
             local sqrt3 <const> = 1.7320508075689
             local sqrt2 <const> = 1.4142135623731
             local qrtrRt3 <const> = qrtrEdge / sqrt3
-
-            -- local eggTop <const> = yCenter - yCorrect * qrtrEdge - yCorrect * qrtrRt3
-            -- local eggBottom <const> = yCenter + yCorrect * qrtrEdge
-            -- local figureHeight <const> = eggBottom - eggTop
 
             local figureHeight <const> = yCorrect * halfEdge
                 + yCorrect * qrtrRt3
@@ -876,10 +874,11 @@ dlg:button {
                     -- Guide for bottom 135 degree swirl.
                     drawEllipse(
                         context,
-                        xCenter + xCorrect * halfEdge * 0.25, yCenter + yDisplace,
-                        xCorrect * qrtrEdge * 1.5, yCorrect * qrtrEdge * 1.5,
-                        -- strokeColor, strokeWeight,
-                        Color(255, 128, 0, 255), strokeWeight,
+                        xCenter + xCorrect * halfEdge * 0.25,
+                        yCenter + yDisplace,
+                        xCorrect * qrtrEdge * 1.5,
+                        yCorrect * qrtrEdge * 1.5,
+                        strokeColor, strokeWeight,
                         useAntialiasVerif)
 
                     -- Vesica piscis that contains egg.
@@ -890,7 +889,7 @@ dlg:button {
                         yCenter + yDisplace - yCorrect * qrtrEdge - yCorrect * qrtrRt3,
                         xCorrect * (halfEdge + qrtrRt3),
                         yCorrect * (halfEdge + qrtrRt3),
-                        math.pi + math.pi / 6.0, math.pi * 2.0 - math.pi / 6.0,
+                        pi + pi / 6.0, tau - pi / 6.0,
                         strokeColor, strokeWeight,
                         useAntialiasVerif)
 
@@ -901,7 +900,7 @@ dlg:button {
                         yCenter + yDisplace + yCorrect * qrtrEdge,
                         xCorrect * (halfEdge + qrtrRt3),
                         yCorrect * (halfEdge + qrtrRt3),
-                        math.pi / 6.0, math.pi - math.pi / 6.0,
+                        pi / 6.0, pi - pi / 6.0,
                         strokeColor, strokeWeight,
                         useAntialiasVerif)
 
@@ -913,6 +912,7 @@ dlg:button {
                         yCenter + yDisplace - yCorrect * qrtrRt3 * 0.5,
                         strokeColor, strokeWeight)
 
+                    -- Center yolk.
                     drawEllipse(
                         context,
                         xCenter,
@@ -929,11 +929,11 @@ dlg:button {
                         yCenter + yDisplace - yCorrect * qrtrRt3 * 0.5,
                         xCorrect * qrtrEdge * 1.5,
                         yCorrect * qrtrEdge * 1.5,
-                        Color(255, 0, 128, 255), strokeWeight,
+                        strokeColor, strokeWeight,
                         useAntialiasVerif)
                 end
 
-                -- Circle around finished mobius figure.
+                -- Circle around mobius figure.
                 drawEllipse(
                     context,
                     xCenter,
@@ -943,7 +943,25 @@ dlg:button {
                     strokeColor, strokeWeight,
                     useAntialiasVerif)
 
-                -- TODO: 2x 135 degree arcs are required for each swirl.
+                drawArc(
+                    context,
+                    xCenter - xCorrect * qrtrRt3,
+                    yCenter + yDisplace - yCorrect * qrtrRt3 * 0.5,
+                    xCorrect * qrtrEdge * 1.5,
+                    yCorrect * qrtrEdge * 1.5,
+                    pi, pi * 0.5 - pi / 5.0,
+                    strokeColor, strokeWeight,
+                    useAntialiasVerif)
+
+                drawArc(
+                    context,
+                    xCenter + xCorrect * halfEdge * 0.25,
+                    yCenter + yDisplace,
+                    xCorrect * qrtrEdge * 1.5,
+                    yCorrect * qrtrEdge * 1.5,
+                    pi, tau - pi / 5.0,
+                    strokeColor, strokeWeight,
+                    useAntialiasVerif)
             end
 
             if drawConstVerif then
@@ -958,7 +976,7 @@ dlg:button {
                     context,
                     xCenter - xCorrect * qrtrEdge, yCenter + yDisplace,
                     xCorrect * halfEdge, yCorrect * halfEdge,
-                    0, math.pi / 3.0,
+                    0, pi / 3.0,
                     strokeColor, strokeWeight,
                     useAntialiasVerif)
 
@@ -966,7 +984,7 @@ dlg:button {
                     context,
                     xCenter + xCorrect * qrtrEdge, yCenter + yDisplace,
                     xCorrect * halfEdge, yCorrect * halfEdge,
-                    2.0 * math.pi / 3.0, math.pi,
+                    2.0 * pi / 3.0, pi,
                     strokeColor, strokeWeight,
                     useAntialiasVerif)
 
@@ -1122,7 +1140,7 @@ dlg:button {
                 context,
                 xConst1, bottom,
                 rx, ry,
-                math.pi * 0.5, math.pi,
+                pi * 0.5, pi,
                 strokeColor, strokeWeight,
                 useAntialiasVerif)
 
@@ -1130,7 +1148,7 @@ dlg:button {
                 context,
                 xConst1, yConst2,
                 rx * phiInv, ry * phiInv,
-                0.0, math.pi * 0.5,
+                0.0, pi * 0.5,
                 strokeColor, strokeWeight,
                 useAntialiasVerif)
 
@@ -1138,7 +1156,7 @@ dlg:button {
                 context,
                 xConst3, yConst2,
                 rx * phiInvE2, ry * phiInvE2,
-                math.pi * 1.5, math.pi * 2.0,
+                pi * 1.5, tau,
                 strokeColor, strokeWeight,
                 useAntialiasVerif)
 
@@ -1146,7 +1164,7 @@ dlg:button {
                 context,
                 xConst3, yConst4,
                 rx * phiInvE3, ry * phiInvE3,
-                math.pi, math.pi * 1.5,
+                pi, pi * 1.5,
                 strokeColor, strokeWeight,
                 useAntialiasVerif)
 
@@ -1154,7 +1172,7 @@ dlg:button {
                 context,
                 xConst5, yConst4,
                 rx * phiInvE4, ry * phiInvE4,
-                math.pi * 0.5, math.pi,
+                pi * 0.5, pi,
                 strokeColor, strokeWeight,
                 useAntialiasVerif)
         elseif diagOption == "HEX_GRID" then
@@ -1179,7 +1197,7 @@ dlg:button {
             local xCorrExt <const> = dimScale * extent
             local yRadius <const> = yCorrect * radius
             local yRad1_5 <const> = yCorrect * radius * 1.5
-            local orientation <const> = math.pi * 3 / 2
+            local orientation <const> = pi * 1.5
 
             if rings > 1 then
                 drawPolygon(

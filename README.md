@@ -18,7 +18,7 @@ A hot key can be assigned to the script by going to `Edit > Keyboard Shortcuts`.
 
 ## Acknowledgments
 
-Many diagrams were influenced by [Zak Korvin](https://www.youtube.com/@ZKorvin)'s geometry drawing videos: [Radiating Circles](https://www.youtube.com/watch?v=zULrMqzxZ1I), [Sand Reckoner's diagram](https://www.youtube.com/watch?v=4cG9RahEpvM), [Try This Grid on Your Next Mandala](https://www.youtube.com/watch?v=vF1Y1avXjF8), [Drawing the Pentagram](https://www.youtube.com/watch?v=BYz08m1HfVw), [Zen Geometry Study 035 Egg](https://www.youtube.com/watch?v=HqSZbFt5bIM).
+Many diagrams were influenced by [Zak Korvin](https://www.youtube.com/@ZKorvin)'s geometry drawing videos: [Radiating Circles](https://www.youtube.com/watch?v=zULrMqzxZ1I), [Sand Reckoner's diagram](https://www.youtube.com/watch?v=4cG9RahEpvM), [Try This Grid on Your Next Mandala](https://www.youtube.com/watch?v=vF1Y1avXjF8), [Drawing the Pentagram](https://www.youtube.com/watch?v=BYz08m1HfVw), [Mobius Egg](https://www.youtube.com/watch?v=pQt-wtjOH-E).
 
 ## Examples
 
