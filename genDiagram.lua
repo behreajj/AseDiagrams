@@ -44,6 +44,7 @@ local defaults <const> = {
     -- Egg:
     drawConstruct = true,
     drawFigure = false,
+    drawMobius = false,
 
     -- Hex grid:
     hexRings = 4,
@@ -78,6 +79,11 @@ local defaults <const> = {
     starMin = 5,
     starMax = 16,
     angStarDeg = 0,
+
+    wSprite = 640,
+    hSprite = 360,
+    wBkgCheck = 40,
+    hBkgCheck = 40,
 }
 
 ---@param context GraphicsContext canvas
@@ -153,44 +159,76 @@ end
 ---@param yc number center y
 ---@param w number radius x
 ---@param h number radius y
----@param quadrant integer quadrant
+---@param startAngle number start angle in radians
+---@param stopAngle number stop angle in radians
 ---@param strokeClr Color stroke color
 ---@param strokeWeight integer stroke weight
 ---@param useAntialias? boolean use antialias
-local function drawOrthoArc(
+local function drawArc(
     context,
-    xc, yc, w, h, quadrant,
+    xc, yc, w, h,
+    startAngle, stopAngle,
     strokeClr, strokeWeight,
     useAntialias)
     local useStrokeVerif <const> = strokeWeight > 0
         and strokeClr.alpha > 0
     if (not useStrokeVerif) then return end
 
-    local kw <const> = 0.5522847498307936 * w
-    local kh <const> = 0.5522847498307936 * h
-
     local xcVerif = useAntialias and xc or math.floor(xc)
     local ycVerif = useAntialias and yc or math.floor(yc)
-    local qVerif <const> = quadrant % 4
 
-    local right <const> = xcVerif + w
-    local left <const> = xcVerif - w
-    local top <const> = ycVerif + h
-    local bottom <const> = ycVerif - h
+    local cos = math.cos
+    local sin = math.sin
+    local tau = math.pi + math.pi
+    local halfpi = math.pi * 0.5
+
+    local stAngVerif = math.min(startAngle, stopAngle)
+    local edAngVerif = math.max(startAngle, stopAngle)
+    local arcLength = math.min(edAngVerif - stAngVerif, tau)
+
+    local arcLen01 = arcLength / tau
+    local knCtVerif = math.ceil(1 + 4 * arcLen01)
+    local toStep = 1.0 / (knCtVerif - 1.0)
+    local invKnCt = toStep * arcLen01
+    local xhm = w * (4.0 / 3.0) * math.tan(halfpi * invKnCt)
+    local yhm = h * (4.0 / 3.0) * math.tan(halfpi * invKnCt)
+
+    local cosAngle = cos(-stAngVerif)
+    local sinAngle = sin(-stAngVerif)
+    local xap = xcVerif + w * cosAngle
+    local yap = ycVerif + h * sinAngle
+    local hmsina = sinAngle * xhm
+    local hmcosa = cosAngle * yhm
+    local cp1x = xap + hmsina
+    local cp1y = yap - hmcosa
+    local cp2x = 0
+    local cp2y = 0
 
     context:beginPath()
-    if qVerif == 3 then
-        context:moveTo(right, yc)
-        context:cubicTo(right, yc + kh, xc + kw, top, xc, top)
-    elseif qVerif == 2 then
-        context:moveTo(xc, top)
-        context:cubicTo(xc - kw, top, left, yc + kh, left, yc)
-    elseif qVerif == 1 then
-        context:moveTo(left, yc)
-        context:cubicTo(left, yc - kh, xc - kw, bottom, xc, bottom)
-    else
-        context:moveTo(xc, bottom)
-        context:cubicTo(xc + kw, bottom, right, yc - kh, right, yc)
+    context:moveTo(xap, yap)
+
+    local i = 1
+    while i < knCtVerif do
+        local t = i * toStep
+        local u = 1.0 - t
+        local angle = u * stAngVerif + t * edAngVerif
+
+        cosAngle = cos(-angle)
+        sinAngle = sin(-angle)
+        xap = xcVerif + w * cosAngle
+        yap = ycVerif + h * sinAngle
+
+        hmsina = sinAngle * xhm
+        hmcosa = cosAngle * yhm
+        cp2x = xap - hmsina
+        cp2y = yap + hmcosa
+
+        context:cubicTo(cp1x, cp1y, cp2x, cp2y, xap, yap)
+
+        cp1x = xap + hmsina
+        cp1y = yap - hmcosa
+
+        i = i + 1
     end
 
     context.strokeWidth = strokeWeight
@@ -321,6 +359,7 @@ dlg:combobox {
 
         dlg:modify { id = "drawConstruct", visible = isEgg }
         dlg:modify { id = "drawFigure", visible = isEgg }
+        dlg:modify { id = "drawMobius", visible = isEgg }
 
         dlg:modify { id = "hexRings", visible = isHex }
         dlg:modify { id = "useDimetric", visible = isHex }
@@ -356,23 +395,31 @@ dlg:slider {
 dlg:newrow { always = false }
 
 dlg:check {
-    id = "drawConstruct",
-    label = "Draw:",
-    text = "Guides",
-    selected = defaults.drawConstruct,
-    focus = false,
-    visible = defaults.diagOption == "EGG",
-}
-
-dlg:check {
     id = "drawFigure",
+    label = "Draw:",
     text = "Figure",
     selected = defaults.drawFigure,
     focus = false,
     visible = defaults.diagOption == "EGG",
 }
 
+dlg:check {
+    id = "drawMobius",
+    text = "Mobius",
+    selected = defaults.drawMobius,
+    focus = false,
+    visible = defaults.diagOption == "EGG",
+}
+
 dlg:newrow { always = false }
+
+dlg:check {
+    id = "drawConstruct",
+    text = "Guides",
+    selected = defaults.drawConstruct,
+    focus = false,
+    visible = defaults.diagOption == "EGG",
+}
 
 dlg:slider {
     id = "hexRings",
@@ -580,13 +627,28 @@ dlg:button {
         local sprite = app.sprite
         if not sprite then
             local defSpec <const> = ImageSpec {
-                width = 640,
-                height = 360,
+                width = defaults.wSprite,
+                height = defaults.hSprite,
                 colorMode = ColorMode.RGB,
                 transparentColor = 0
             }
             defSpec.colorSpace = ColorSpace { sRGB = true }
             sprite = Sprite(defSpec)
+
+            local docPrefs <const> = app.preferences.document(sprite)
+            if docPrefs then
+                local bgPref <const> = docPrefs.bg
+                if bgPref then
+                    bgPref.type = 5
+                    bgPref.size = Size(
+                        defaults.wBkgCheck,
+                        defaults.hBkgCheck)
+                end
+            end
+            sprite.gridBounds = Rectangle(
+                0, 0,
+                defaults.wBkgCheck,
+                defaults.hBkgCheck)
 
             app.transaction("Set Palette", function()
                 local palette <const> = sprite.palettes[1]
@@ -738,8 +800,9 @@ dlg:button {
         elseif diagOption == "EGG" then
             gridName = "Egg"
 
-            local drawConstruct = args.drawConstruct --[[@as boolean]]
-            local drawFigure = args.drawFigure --[[@as boolean]]
+            local drawFigure <const> = args.drawFigure --[[@as boolean]]
+            local drawMobius <const> = args.drawMobius --[[@as boolean]]
+            local drawConstruct <const> = args.drawConstruct --[[@as boolean]]
 
             local halfEdge <const> = shortEdge * 0.5
             local qrtrEdge <const> = shortEdge * 0.25
@@ -747,15 +810,140 @@ dlg:button {
             local sqrt2 <const> = 1.4142135623731
             local qrtrRt3 <const> = qrtrEdge / sqrt3
 
+            -- local eggTop <const> = yCenter - yCorrect * qrtrEdge - yCorrect * qrtrRt3
+            -- local eggBottom <const> = yCenter + yCorrect * qrtrEdge
+            -- local figureHeight <const> = eggBottom - eggTop
+
             local figureHeight <const> = yCorrect * halfEdge
                 + yCorrect * qrtrRt3
             local yDisplace <const> = figureHeight * 0.125
 
-            local drawConstVerif = drawConstruct
             local drawFigVerif = drawFigure
-            if (not drawConstruct) and (not drawFigure) then
-                drawConstVerif = true
-                drawFigVerif = false
+            local drawMobiusVerif = drawMobius
+            local drawConstVerif = drawConstruct
+            if (not drawFigure)
+                and (not drawMobius)
+                and (not drawConstruct) then
+                drawFigVerif = defaults.drawFigure
+                drawMobiusVerif = defaults.drawMobius
+                drawConstVerif = defaults.drawConstruct
+            end
+
+            if drawMobiusVerif then
+                if drawConstVerif then
+                    drawEllipse(
+                        context,
+                        xCenter - xCorrect * qrtrEdge, yCenter + yDisplace,
+                        xCorrect * halfEdge, yCorrect * halfEdge,
+                        strokeColor, strokeWeight,
+                        useAntialiasVerif)
+
+                    drawEllipse(
+                        context,
+                        xCenter + xCorrect * qrtrEdge, yCenter + yDisplace,
+                        xCorrect * halfEdge, yCorrect * halfEdge,
+                        strokeColor, strokeWeight,
+                        useAntialiasVerif)
+
+                    drawEllipse(
+                        context,
+                        xCenter + xCorrect * qrtrEdge, yCenter + yDisplace,
+                        xCorrect * qrtrEdge, yCorrect * qrtrEdge,
+                        strokeColor, strokeWeight,
+                        useAntialiasVerif)
+
+                    drawLine(context,
+                        xCenter - xCorrect * qrtrEdge - halfEdge * 0.70710682,
+                        yCenter + yDisplace + halfEdge * 0.70710682,
+                        xCenter + xCorrect * qrtrEdge,
+                        yCenter + yDisplace - yCorrect * halfEdge,
+                        strokeColor, strokeWeight)
+
+                    drawLine(context,
+                        xCenter + xCorrect * qrtrEdge + halfEdge * 0.70710682,
+                        yCenter + yDisplace + halfEdge * 0.70710682,
+                        xCenter - xCorrect * qrtrEdge,
+                        yCenter + yDisplace - yCorrect * halfEdge,
+                        strokeColor, strokeWeight)
+
+                    drawLine(context,
+                        xCenter + xCorrect * halfEdge * 0.25,
+                        yCenter + yDisplace - yCorrect * qrtrEdge * 0.8660254,
+                        xCenter + xCorrect * halfEdge * 0.25,
+                        yCenter + yDisplace + yCorrect * qrtrEdge * 0.8660254,
+                        strokeColor, strokeWeight)
+
+                    -- Guide for bottom 135 degree swirl.
+                    drawEllipse(
+                        context,
+                        xCenter + xCorrect * halfEdge * 0.25, yCenter + yDisplace,
+                        xCorrect * qrtrEdge * 1.5, yCorrect * qrtrEdge * 1.5,
+                        -- strokeColor, strokeWeight,
+                        Color(255, 128, 0, 255), strokeWeight,
+                        useAntialiasVerif)
+
+                    -- Vesica piscis that contains egg.
+                    drawArc(
+                        context,
+                        xCenter,
+                        -- This is the top of the egg.
+                        yCenter + yDisplace - yCorrect * qrtrEdge - yCorrect * qrtrRt3,
+                        xCorrect * (halfEdge + qrtrRt3),
+                        yCorrect * (halfEdge + qrtrRt3),
+                        math.pi + math.pi / 6.0, math.pi * 2.0 - math.pi / 6.0,
+                        strokeColor, strokeWeight,
+                        useAntialiasVerif)
+
+                    drawArc(
+                        context,
+                        xCenter,
+                        -- This is the bottom of the egg.
+                        yCenter + yDisplace + yCorrect * qrtrEdge,
+                        xCorrect * (halfEdge + qrtrRt3),
+                        yCorrect * (halfEdge + qrtrRt3),
+                        math.pi / 6.0, math.pi - math.pi / 6.0,
+                        strokeColor, strokeWeight,
+                        useAntialiasVerif)
+
+                    -- Vesica piscis bisector.
+                    drawLine(context,
+                        xCenter + xCorrect * (halfEdge + qrtrRt3) * 0.8660254,
+                        yCenter + yDisplace - yCorrect * qrtrRt3 * 0.5,
+                        xCenter - xCorrect * (halfEdge + qrtrRt3) * 0.8660254,
+                        yCenter + yDisplace - yCorrect * qrtrRt3 * 0.5,
+                        strokeColor, strokeWeight)
+
+                    drawEllipse(
+                        context,
+                        xCenter,
+                        yCenter + yDisplace - yCorrect * qrtrRt3 * 0.5,
+                        xCorrect * qrtrRt3,
+                        yCorrect * qrtrRt3,
+                        strokeColor, strokeWeight,
+                        useAntialiasVerif)
+
+                    -- Guide for top 135 degree swirl.
+                    drawEllipse(
+                        context,
+                        xCenter - xCorrect * qrtrRt3,
+                        yCenter + yDisplace - yCorrect * qrtrRt3 * 0.5,
+                        xCorrect * qrtrEdge * 1.5,
+                        yCorrect * qrtrEdge * 1.5,
+                        Color(255, 0, 128, 255), strokeWeight,
+                        useAntialiasVerif)
+                end
+
+                -- Circle around finished mobius figure.
+                drawEllipse(
+                    context,
+                    xCenter,
+                    yCenter + yDisplace - yCorrect * qrtrRt3 * 0.5,
+                    xCorrect * halfEdge * 1.0388889,
+                    yCorrect * halfEdge * 1.0388889,
+                    strokeColor, strokeWeight,
+                    useAntialiasVerif)
+
+                -- TODO: 2x 135 degree arcs are required for each swirl.
             end
 
             if drawConstVerif then
@@ -766,30 +954,30 @@ dlg:button {
                     strokeColor, strokeWeight,
                     useAntialiasVerif)
 
+                drawArc(
+                    context,
+                    xCenter - xCorrect * qrtrEdge, yCenter + yDisplace,
+                    xCorrect * halfEdge, yCorrect * halfEdge,
+                    0, math.pi / 3.0,
+                    strokeColor, strokeWeight,
+                    useAntialiasVerif)
+
+                drawArc(
+                    context,
+                    xCenter + xCorrect * qrtrEdge, yCenter + yDisplace,
+                    xCorrect * halfEdge, yCorrect * halfEdge,
+                    2.0 * math.pi / 3.0, math.pi,
+                    strokeColor, strokeWeight,
+                    useAntialiasVerif)
+
                 drawLine(context,
                     xCenter - xCorrect * qrtrEdge, yCenter + yDisplace,
                     xCenter + xCorrect * qrtrEdge, yCenter + yDisplace,
                     strokeColor, strokeWeight)
 
-                drawOrthoArc(
-                    context,
-                    xCenter + xCorrect * qrtrEdge, yCenter + yDisplace,
-                    xCorrect * halfEdge, yCorrect * halfEdge, 1,
-                    strokeColor, strokeWeight,
-                    useAntialiasVerif)
-
-                drawOrthoArc(
-                    context,
-                    xCenter - xCorrect * qrtrEdge, yCenter + yDisplace,
-                    xCorrect * halfEdge, yCorrect * halfEdge, 0,
-                    strokeColor, strokeWeight,
-                    useAntialiasVerif)
-
                 drawLine(context,
-                    xCenter,
-                    yCenter + yDisplace,
-                    xCenter,
-                    yCenter - yCorrect * qrtrEdge * sqrt3 + yDisplace,
+                    xCenter, yCenter + yDisplace,
+                    xCenter, yCenter - yCorrect * qrtrEdge * sqrt3 + yDisplace,
                     strokeColor, strokeWeight)
 
                 drawLine(context,
@@ -816,7 +1004,7 @@ dlg:button {
                     useAntialiasVerif)
             end
 
-            if drawFigVerif then
+            if drawFigVerif or drawMobiusVerif then
                 context:beginPath()
                 context:moveTo(
                     xCenter + xCorrect * qrtrEdge,
@@ -930,38 +1118,43 @@ dlg:button {
 
             local rx <const> = xCorrect * shortEdge
             local ry <const> = yCorrect * shortEdge
-            drawOrthoArc(
+            drawArc(
                 context,
                 xConst1, bottom,
-                rx, ry, 1,
+                rx, ry,
+                math.pi * 0.5, math.pi,
                 strokeColor, strokeWeight,
                 useAntialiasVerif)
 
-            drawOrthoArc(
+            drawArc(
                 context,
                 xConst1, yConst2,
-                rx * phiInv, ry * phiInv, 0,
+                rx * phiInv, ry * phiInv,
+                0.0, math.pi * 0.5,
                 strokeColor, strokeWeight,
                 useAntialiasVerif)
 
-            drawOrthoArc(
+            drawArc(
                 context,
                 xConst3, yConst2,
-                rx * phiInvE2, ry * phiInvE2, 3,
+                rx * phiInvE2, ry * phiInvE2,
+                math.pi * 1.5, math.pi * 2.0,
                 strokeColor, strokeWeight,
                 useAntialiasVerif)
 
-            drawOrthoArc(
+            drawArc(
                 context,
                 xConst3, yConst4,
-                rx * phiInvE3, ry * phiInvE3, 2,
+                rx * phiInvE3, ry * phiInvE3,
+                math.pi, math.pi * 1.5,
                 strokeColor, strokeWeight,
                 useAntialiasVerif)
 
-            drawOrthoArc(
+            drawArc(
                 context,
                 xConst5, yConst4,
-                rx * phiInvE4, ry * phiInvE4, 1,
+                rx * phiInvE4, ry * phiInvE4,
+                math.pi * 0.5, math.pi,
                 strokeColor, strokeWeight,
                 useAntialiasVerif)
         elseif diagOption == "HEX_GRID" then
