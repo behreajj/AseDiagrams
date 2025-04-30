@@ -187,7 +187,8 @@ local function drawArc(
     local arcLength = math.min(edAngVerif - stAngVerif, tau)
 
     local arcLen01 = arcLength / tau
-    local knCtVerif = math.ceil(1 + 4 * arcLen01)
+    -- local knCtVerif = math.ceil(1 + 4 * arcLen01)
+    local knCtVerif = math.max(2, math.ceil(4 * arcLen01))
     local toStep = 1.0 / (knCtVerif - 1.0)
     local invKnCt = toStep * arcLen01
     local xhm = w * (4.0 / 3.0) * math.tan(halfpi * invKnCt)
@@ -1396,10 +1397,6 @@ dlg:button {
                     local yRadius <const> = u * yMinRadius
                         + t * yMaxRadius
 
-                    -- TODO: Option to turn this into a spherical grid by
-                    -- scaling the radii appropriately? Could change t, but
-                    -- would also have to change the min radius.
-                    -- t = math.sqrt(1.0 - math.sqrt(t * t))
                     drawEllipse(
                         context,
                         xCenter, yCenter,
