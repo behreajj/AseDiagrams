@@ -44,7 +44,6 @@ local defaults <const> = {
     -- Egg:
     drawConstruct = false,
     drawFigure = true,
-    drawMobius = false,
 
     -- Hex grid:
     hexRings = 4,
@@ -360,7 +359,6 @@ dlg:combobox {
 
         dlg:modify { id = "drawConstruct", visible = isEgg }
         dlg:modify { id = "drawFigure", visible = isEgg }
-        dlg:modify { id = "drawMobius", visible = isEgg }
 
         dlg:modify { id = "hexRings", visible = isHex }
         dlg:modify { id = "useDimetric", visible = isHex }
@@ -400,14 +398,6 @@ dlg:check {
     label = "Draw:",
     text = "Figure",
     selected = defaults.drawFigure,
-    focus = false,
-    visible = defaults.diagOption == "EGG",
-}
-
-dlg:check {
-    id = "drawMobius",
-    text = "Mobius",
-    selected = defaults.drawMobius,
     focus = false,
     visible = defaults.diagOption == "EGG",
 }
@@ -803,7 +793,6 @@ dlg:button {
             gridName = "Egg"
 
             local drawFigure <const> = args.drawFigure --[[@as boolean]]
-            local drawMobius <const> = args.drawMobius --[[@as boolean]]
             local drawConstruct <const> = args.drawConstruct --[[@as boolean]]
 
             -- Scale by 1/1.0388889 so that mobius figure fits?
@@ -818,151 +807,11 @@ dlg:button {
             local yDisplace <const> = figureHeight * 0.125
 
             local drawFigVerif = drawFigure
-            local drawMobiusVerif = drawMobius
             local drawConstVerif = drawConstruct
             if (not drawFigure)
-                and (not drawMobius)
                 and (not drawConstruct) then
                 drawFigVerif = defaults.drawFigure
-                drawMobiusVerif = defaults.drawMobius
                 drawConstVerif = defaults.drawConstruct
-            end
-
-            if drawMobiusVerif then
-                if drawConstVerif then
-                    drawEllipse(
-                        context,
-                        xCenter - xCorrect * qrtrEdge, yCenter + yDisplace,
-                        xCorrect * halfEdge, yCorrect * halfEdge,
-                        strokeColor, strokeWeight,
-                        useAntialiasVerif)
-
-                    drawEllipse(
-                        context,
-                        xCenter + xCorrect * qrtrEdge, yCenter + yDisplace,
-                        xCorrect * halfEdge, yCorrect * halfEdge,
-                        strokeColor, strokeWeight,
-                        useAntialiasVerif)
-
-                    drawEllipse(
-                        context,
-                        xCenter + xCorrect * qrtrEdge, yCenter + yDisplace,
-                        xCorrect * qrtrEdge, yCorrect * qrtrEdge,
-                        strokeColor, strokeWeight,
-                        useAntialiasVerif)
-
-                    drawLine(context,
-                        xCenter - xCorrect * qrtrEdge - halfEdge * 0.70710682,
-                        yCenter + yDisplace + halfEdge * 0.70710682,
-                        xCenter + xCorrect * qrtrEdge,
-                        yCenter + yDisplace - yCorrect * halfEdge,
-                        strokeColor, strokeWeight)
-
-                    drawLine(context,
-                        xCenter + xCorrect * qrtrEdge + halfEdge * 0.70710682,
-                        yCenter + yDisplace + halfEdge * 0.70710682,
-                        xCenter - xCorrect * qrtrEdge,
-                        yCenter + yDisplace - yCorrect * halfEdge,
-                        strokeColor, strokeWeight)
-
-                    drawLine(context,
-                        xCenter + xCorrect * halfEdge * 0.25,
-                        yCenter + yDisplace - yCorrect * qrtrEdge * 0.8660254,
-                        xCenter + xCorrect * halfEdge * 0.25,
-                        yCenter + yDisplace + yCorrect * qrtrEdge * 0.8660254,
-                        strokeColor, strokeWeight)
-
-                    -- Guide for bottom 135 degree swirl.
-                    drawEllipse(
-                        context,
-                        xCenter + xCorrect * halfEdge * 0.25,
-                        yCenter + yDisplace,
-                        xCorrect * qrtrEdge * 1.5,
-                        yCorrect * qrtrEdge * 1.5,
-                        strokeColor, strokeWeight,
-                        useAntialiasVerif)
-
-                    -- Vesica piscis that contains egg.
-                    drawArc(
-                        context,
-                        xCenter,
-                        -- This is the top of the egg.
-                        yCenter + yDisplace - yCorrect * qrtrEdge - yCorrect * qrtrRt3,
-                        xCorrect * (halfEdge + qrtrRt3),
-                        yCorrect * (halfEdge + qrtrRt3),
-                        pi + pi / 6.0, tau - pi / 6.0,
-                        strokeColor, strokeWeight,
-                        useAntialiasVerif)
-
-                    drawArc(
-                        context,
-                        xCenter,
-                        -- This is the bottom of the egg.
-                        yCenter + yDisplace + yCorrect * qrtrEdge,
-                        xCorrect * (halfEdge + qrtrRt3),
-                        yCorrect * (halfEdge + qrtrRt3),
-                        pi / 6.0, pi - pi / 6.0,
-                        strokeColor, strokeWeight,
-                        useAntialiasVerif)
-
-                    -- Vesica piscis bisector.
-                    drawLine(context,
-                        xCenter + xCorrect * (halfEdge + qrtrRt3) * 0.8660254,
-                        yCenter + yDisplace - yCorrect * qrtrRt3 * 0.5,
-                        xCenter - xCorrect * (halfEdge + qrtrRt3) * 0.8660254,
-                        yCenter + yDisplace - yCorrect * qrtrRt3 * 0.5,
-                        strokeColor, strokeWeight)
-
-                    -- Center yolk.
-                    drawEllipse(
-                        context,
-                        xCenter,
-                        yCenter + yDisplace - yCorrect * qrtrRt3 * 0.5,
-                        xCorrect * qrtrRt3,
-                        yCorrect * qrtrRt3,
-                        strokeColor, strokeWeight,
-                        useAntialiasVerif)
-
-                    -- Guide for top 135 degree swirl.
-                    drawEllipse(
-                        context,
-                        xCenter - xCorrect * qrtrRt3,
-                        yCenter + yDisplace - yCorrect * qrtrRt3 * 0.5,
-                        xCorrect * qrtrEdge * 1.5,
-                        yCorrect * qrtrEdge * 1.5,
-                        strokeColor, strokeWeight,
-                        useAntialiasVerif)
-                end
-
-                -- Circle around mobius figure.
-                drawEllipse(
-                    context,
-                    xCenter,
-                    yCenter + yDisplace - yCorrect * qrtrRt3 * 0.5,
-                    xCorrect * halfEdge * 1.0388889,
-                    yCorrect * halfEdge * 1.0388889,
-                    strokeColor, strokeWeight,
-                    useAntialiasVerif)
-
-                drawArc(
-                    context,
-                    xCenter - xCorrect * qrtrRt3,
-                    yCenter + yDisplace - yCorrect * qrtrRt3 * 0.5,
-                    xCorrect * qrtrEdge * 1.5,
-                    yCorrect * qrtrEdge * 1.5,
-                    pi, pi * 0.5 - pi / 5.0,
-                    strokeColor, strokeWeight,
-                    useAntialiasVerif)
-
-                drawArc(
-                    context,
-                    xCenter + xCorrect * halfEdge * 0.25,
-                    yCenter + yDisplace,
-                    xCorrect * qrtrEdge * 1.5,
-                    yCorrect * qrtrEdge * 1.5,
-                    pi, tau - pi / 5.0,
-                    strokeColor, strokeWeight,
-                    useAntialiasVerif)
             end
 
             if drawConstVerif then
@@ -1023,7 +872,7 @@ dlg:button {
                     useAntialiasVerif)
             end
 
-            if drawFigVerif or drawMobiusVerif then
+            if drawFigVerif then
                 context:beginPath()
                 context:moveTo(
                     xCenter + xCorrect * qrtrEdge,
