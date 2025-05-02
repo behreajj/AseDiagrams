@@ -1,5 +1,33 @@
 local diagOptions <const> = {
-    -- vesica piscis, phyllotaxis, stereographic projection?
+    -- TODO: vesica piscis
+    -- btm_rh = (-0.20626738450566875, -0.2886751345948129, 0.0)
+    -- btm_co = (0.0, -0.2886751345948129, 0.0)
+    -- btm_fh = (0.20626738450566875, -0.2886751345948129, 0.0)
+
+    -- lft_rh = (-0.39686630774716575, 0.17863279495408177, 0.0)
+    -- lft_co = (-0.5, 0.0, 0.0)
+    -- lft_fh = (-0.39686630774716575, -0.17863279495408177, 0.0)
+
+    -- top_rh = (0.20626738450566875, 0.2886751345948129, 0.0)
+    -- top_co = (0.0, 0.2886751345948129, 0.0)
+    -- top_fh = (-0.20626738450566875, 0.2886751345948129, 0.0)
+
+    -- right_rh = (0.39686630774716575, -0.17863279495408177, 0.0)
+    -- right_co = (0.5, 0.0, 0.0)
+    -- right_fh = (0.39686630774716575, 0.17863279495408177, 0.0)
+
+    -- Seed of life ratios:
+    -- right
+    -- rh: (-0.3479807901568614, -0.08776833172493075, 0.0)
+    -- co: (0.5, 0.0, 0.0)
+    -- fh: (-0.3479807901568614, 0.08776833172493075, 0.0)
+    --
+    -- top:
+    -- rh: (0.1755366634498613, 0.13397459621556138, 0.0)
+    -- co: (0.0, 0.13397459621556138, 0.0)
+    -- fh: (-0.1755366634498613, 0.13397459621556138, 0.0)
+
+    -- phyllotaxis, stereographic projection?
     "DIMETRIC_GRID",
     "EGG",
     "GOLDEN_RECT",
@@ -105,8 +133,8 @@ local function drawEllipse(
     local kw <const> = 0.5522847498307936 * w
     local kh <const> = 0.5522847498307936 * h
 
-    local xcVerif = useAntialias and xc or math.floor(xc)
-    local ycVerif = useAntialias and yc or math.floor(yc)
+    local xcVerif <const> = useAntialias and xc or math.floor(xc)
+    local ycVerif <const> = useAntialias and yc or math.floor(yc)
 
     local right <const> = xcVerif + w
     local left <const> = xcVerif - w
@@ -173,25 +201,25 @@ local function drawArc(
         and strokeClr.alpha > 0
     if (not useStrokeVerif) then return end
 
-    local xcVerif = useAntialias and xc or math.floor(xc)
-    local ycVerif = useAntialias and yc or math.floor(yc)
+    local xcVerif <const> = useAntialias and xc or math.floor(xc)
+    local ycVerif <const> = useAntialias and yc or math.floor(yc)
 
-    local cos = math.cos
-    local sin = math.sin
-    local tau = math.pi + math.pi
-    local halfpi = math.pi * 0.5
+    local cos <const> = math.cos
+    local sin <const> = math.sin
+    local tau <const> = math.pi + math.pi
+    local halfpi <const> = math.pi * 0.5
 
-    local stAngVerif = math.min(startAngle, stopAngle)
-    local edAngVerif = math.max(startAngle, stopAngle)
-    local arcLength = math.min(edAngVerif - stAngVerif, tau)
+    local stAngVerif <const> = math.min(startAngle, stopAngle)
+    local edAngVerif <const> = math.max(startAngle, stopAngle)
+    local arcLength <const> = math.min(edAngVerif - stAngVerif, tau)
 
-    local arcLen01 = arcLength / tau
-    -- local knCtVerif = math.ceil(1 + 4 * arcLen01)
-    local knCtVerif = math.max(2, math.ceil(4 * arcLen01))
-    local toStep = 1.0 / (knCtVerif - 1.0)
-    local invKnCt = toStep * arcLen01
-    local xhm = w * (4.0 / 3.0) * math.tan(halfpi * invKnCt)
-    local yhm = h * (4.0 / 3.0) * math.tan(halfpi * invKnCt)
+    local arcLen01 <const> = arcLength / tau
+    local kntAdd <const> = arcLen01 % 0.25 > 0.00001 and 1 or 0
+    local knCtVerif <const> = math.max(2, math.ceil(kntAdd + 4 * arcLen01))
+    local toStep <const> = 1.0 / (knCtVerif - 1.0)
+    local invKnCt <const> = toStep * arcLen01
+    local xhm <const> = w * (4.0 / 3.0) * math.tan(halfpi * invKnCt)
+    local yhm <const> = h * (4.0 / 3.0) * math.tan(halfpi * invKnCt)
 
     local cosAngle = cos(-stAngVerif)
     local sinAngle = sin(-stAngVerif)
@@ -258,8 +286,8 @@ local function drawPolygon(
         return
     end
 
-    local xcVerif = useAntialias and xc or math.floor(xc)
-    local ycVerif = useAntialias and yc or math.floor(yc)
+    local xcVerif <const> = useAntialias and xc or math.floor(xc)
+    local ycVerif <const> = useAntialias and yc or math.floor(yc)
 
     local iToTheta <const> = 6.2831853071796 / sides
     local cos <const> = math.cos
@@ -303,8 +331,8 @@ local function drawRect(
         return
     end
 
-    local xcVerif = useAntialias and xc or math.floor(xc)
-    local ycVerif = useAntialias and yc or math.floor(yc)
+    local xcVerif <const> = useAntialias and xc or math.floor(xc)
+    local ycVerif <const> = useAntialias and yc or math.floor(yc)
 
     local right <const> = xcVerif + w
     local left <const> = xcVerif - w
