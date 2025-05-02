@@ -1,32 +1,4 @@
 local diagOptions <const> = {
-    -- TODO: vesica piscis
-    -- btm_rh = (-0.20626738450566875, -0.2886751345948129, 0.0)
-    -- btm_co = (0.0, -0.2886751345948129, 0.0)
-    -- btm_fh = (0.20626738450566875, -0.2886751345948129, 0.0)
-
-    -- lft_rh = (-0.39686630774716575, 0.17863279495408177, 0.0)
-    -- lft_co = (-0.5, 0.0, 0.0)
-    -- lft_fh = (-0.39686630774716575, -0.17863279495408177, 0.0)
-
-    -- top_rh = (0.20626738450566875, 0.2886751345948129, 0.0)
-    -- top_co = (0.0, 0.2886751345948129, 0.0)
-    -- top_fh = (-0.20626738450566875, 0.2886751345948129, 0.0)
-
-    -- right_rh = (0.39686630774716575, -0.17863279495408177, 0.0)
-    -- right_co = (0.5, 0.0, 0.0)
-    -- right_fh = (0.39686630774716575, 0.17863279495408177, 0.0)
-
-    -- Seed of life ratios:
-    -- right
-    -- rh: (-0.3479807901568614, -0.08776833172493075, 0.0)
-    -- co: (0.5, 0.0, 0.0)
-    -- fh: (-0.3479807901568614, 0.08776833172493075, 0.0)
-    --
-    -- top:
-    -- rh: (0.1755366634498613, 0.13397459621556138, 0.0)
-    -- co: (0.0, 0.13397459621556138, 0.0)
-    -- fh: (-0.1755366634498613, 0.13397459621556138, 0.0)
-
     -- phyllotaxis, stereographic projection?
     "DIMETRIC_GRID",
     "EGG",
@@ -40,6 +12,7 @@ local diagOptions <const> = {
     "SAND_RECKONER",
     "SEED_OF_LIFE",
     "STAR",
+    "VESICA_PISCIS",
 }
 
 local layerPlaces <const> = {
@@ -106,6 +79,10 @@ local defaults <const> = {
     starMin = 5,
     starMax = 16,
     angStarDeg = 0,
+
+    -- Vesica Piscis:
+    useSeedRatio = false,
+    angVesicaDeg = 0,
 
     wSprite = 640,
     hSprite = 360,
@@ -382,6 +359,7 @@ dlg:combobox {
         local isPolar <const> = diagOption == "POLAR_GRID"
         local isSand <const> = diagOption == "SAND_RECKONER"
         local isStar <const> = diagOption == "STAR"
+        local isVesica <const> = diagOption == "VESICA_PISCIS"
 
         dlg:modify { id = "dimetricCount", visible = isDimetric }
 
@@ -404,6 +382,9 @@ dlg:combobox {
 
         dlg:modify { id = "sidesStar", visible = isStar }
         dlg:modify { id = "angStarDeg", visible = isStar }
+
+        dlg:modify { id = "useSeedRatio", visible = isVesica }
+        dlg:modify { id = "angVesicaDeg", visible = isVesica }
     end,
 }
 
@@ -429,8 +410,6 @@ dlg:check {
     focus = false,
     visible = defaults.diagOption == "EGG",
 }
-
-dlg:newrow { always = false }
 
 dlg:check {
     id = "drawConstruct",
@@ -570,6 +549,29 @@ dlg:slider {
     max = 180,
     focus = false,
     visible = defaults.diagOption == "STAR",
+}
+
+dlg:newrow { always = false }
+
+dlg:slider {
+    id = "angVesicaDeg",
+    label = "Angle:",
+    value = defaults.angVesicaDeg,
+    min = -180,
+    max = 180,
+    focus = false,
+    visible = defaults.diagOption == "VESICA_PISCIS",
+}
+
+dlg:newrow { always = false }
+
+dlg:check {
+    id = "useSeedRatio",
+    label = "Ratio:",
+    text = "Seed of Life",
+    selected = defaults.useSeedRatio,
+    focus = false,
+    visible = defaults.diagOption == "VESICA_PISCIS",
 }
 
 dlg:newrow { always = false }
@@ -1462,6 +1464,107 @@ dlg:button {
 
                 i = i + 1
             end
+        elseif diagOption == "VESICA_PISCIS" then
+            gridName = "Vesica Piscis"
+
+            local angVesicaDeg <const> = args.angVesicaDeg
+                or defaults.angVesicaDeg --[[@as integer]]
+            local useSeedRatio <const> = args.useSeedRatio --[[@as boolean]]
+
+            ---@type number[][]
+            local points <const> = useSeedRatio and
+                {
+                    -- Right
+                    { 0.3479807901568614,  -0.08776833172493075 }, -- rh
+                    { 0.5,                 0.0 },                  -- co
+                    { 0.3479807901568614,  0.08776833172493075 },  -- fh
+
+                    -- Top
+                    { 0.1755366634498613, 0.13397459621556138 }, -- rh
+                    { 0.0,                 0.13397459621556138 }, -- co
+                    { -0.1755366634498613,  0.13397459621556138 }, -- fh
+
+                    -- Left
+                    { -0.3479807901568614, 0.08776833172493075 },  -- rh
+                    { -0.5,                0.0 },                  -- co
+                    { -0.3479807901568614, -0.08776833172493075 }, -- fh
+
+                    -- Bottom
+                    { -0.1755366634498613,  -0.13397459621556138 }, -- rh
+                    { 0.0,                 -0.13397459621556138 }, -- co
+                    { 0.1755366634498613, -0.13397459621556138 }, -- fh
+                }
+                or {
+                    -- Right
+                    { 0.39686630774716575,  -0.17863279495408177 }, -- rh
+                    { 0.5,                  0.0 },                  -- co
+                    { 0.39686630774716575,  0.17863279495408177 },  -- fh
+
+                    -- Top
+                    { 0.20626738450566875, 0.2886751345948129 }, -- rh
+                    { 0.0,                  0.2886751345948129 }, -- co
+                    { -0.20626738450566875,  0.2886751345948129 }, -- fh
+
+                    -- Left
+                    { -0.39686630774716575, 0.17863279495408177 },  -- rh
+                    { -0.5,                 0.0 },                  -- co
+                    { -0.39686630774716575, -0.17863279495408177 }, -- fh
+
+                    -- Bottom
+                    { -0.20626738450566875,  -0.2886751345948129 }, -- rh
+                    { 0.0,                  -0.2886751345948129 }, -- co
+                    { 0.20626738450566875, -0.2886751345948129 }, -- fh
+                }
+
+            local angVesicaRad <const> = math.rad(angVesicaDeg)
+            local cosa <const> = math.cos(angVesicaRad)
+            local sina <const> = math.sin(angVesicaRad)
+            local xRadius <const> = xCorrect * shortEdge
+            local yRadius <const> = yCorrect * shortEdge
+            local lenPoints <const> = #points
+
+            local i = 0
+            while i < lenPoints do
+                i = i + 1
+                local point <const> = points[i]
+                local x <const> = point[1]
+                local y <const> = point[2]
+
+                local xr <const> = cosa * x - sina * y
+                local yr <const> = cosa * y + sina * x
+
+                local xsr <const> = xRadius * xr
+                local ysr <const> = yRadius * yr
+
+                local xtsr <const> = xCenter + xsr
+                local ytsr <const> = yCenter - ysr
+
+                points[i][1] = xtsr
+                points[i][2] = ytsr
+            end
+
+            context:beginPath()
+            context:moveTo(points[2][1], points[2][2])
+            context:cubicTo(
+                points[3][1], points[3][2],
+                points[4][1], points[4][2],
+                points[5][1], points[5][2])
+            context:cubicTo(
+                points[6][1], points[6][2],
+                points[7][1], points[7][2],
+                points[8][1], points[8][2])
+            context:cubicTo(
+                points[9][1], points[9][2],
+                points[10][1], points[10][2],
+                points[11][1], points[11][2])
+            context:cubicTo(
+                points[12][1], points[12][2],
+                points[1][1], points[1][2],
+                points[2][1], points[2][2])
+            context.strokeWidth = strokeWeight
+            context.color = strokeColor
+            context:closePath()
+            context:stroke()
         else
             app.alert {
                 title = "Error",

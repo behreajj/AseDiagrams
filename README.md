@@ -64,6 +64,10 @@ Seed of Life
 
 Star
 
+![Vesica Piscis](vesicaPiscis.png)
+
+Vesica Piscis
+
 Not shown are the in-circle and in-square options.
 
 🇹🇼 🇺🇦
