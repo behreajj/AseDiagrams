@@ -1,5 +1,6 @@
 local diagOptions <const> = {
-    -- phyllotaxis, stereographic projection?
+    -- stereographic projection?
+    -- https://en.wikipedia.org/wiki/Tomoe
     "DIMETRIC_GRID",
     "EGG",
     "GOLDEN_RECT",
@@ -1465,11 +1466,11 @@ dlg:button {
                 i = i + 1
             end
         elseif diagOption == "VESICA_PISCIS" then
-            gridName = "Vesica Piscis"
-
             local angVesicaDeg <const> = args.angVesicaDeg
                 or defaults.angVesicaDeg --[[@as integer]]
             local useSeedRatio <const> = args.useSeedRatio --[[@as boolean]]
+
+            gridName = string.format("VesicaPiscis (%d)", angVesicaDeg)
 
             ---@type number[][]
             local points <const> = useSeedRatio and
@@ -1480,9 +1481,9 @@ dlg:button {
                     { 0.3479807901568614,  0.08776833172493075 },  -- fh
 
                     -- Top
-                    { 0.1755366634498613, 0.13397459621556138 }, -- rh
+                    { 0.1755366634498613,  0.13397459621556138 }, -- rh
                     { 0.0,                 0.13397459621556138 }, -- co
-                    { -0.1755366634498613,  0.13397459621556138 }, -- fh
+                    { -0.1755366634498613, 0.13397459621556138 }, -- fh
 
                     -- Left
                     { -0.3479807901568614, 0.08776833172493075 },  -- rh
@@ -1490,9 +1491,9 @@ dlg:button {
                     { -0.3479807901568614, -0.08776833172493075 }, -- fh
 
                     -- Bottom
-                    { -0.1755366634498613,  -0.13397459621556138 }, -- rh
+                    { -0.1755366634498613, -0.13397459621556138 }, -- rh
                     { 0.0,                 -0.13397459621556138 }, -- co
-                    { 0.1755366634498613, -0.13397459621556138 }, -- fh
+                    { 0.1755366634498613,  -0.13397459621556138 }, -- fh
                 }
                 or {
                     -- Right
@@ -1501,9 +1502,9 @@ dlg:button {
                     { 0.39686630774716575,  0.17863279495408177 },  -- fh
 
                     -- Top
-                    { 0.20626738450566875, 0.2886751345948129 }, -- rh
+                    { 0.20626738450566875,  0.2886751345948129 }, -- rh
                     { 0.0,                  0.2886751345948129 }, -- co
-                    { -0.20626738450566875,  0.2886751345948129 }, -- fh
+                    { -0.20626738450566875, 0.2886751345948129 }, -- fh
 
                     -- Left
                     { -0.39686630774716575, 0.17863279495408177 },  -- rh
@@ -1511,9 +1512,9 @@ dlg:button {
                     { -0.39686630774716575, -0.17863279495408177 }, -- fh
 
                     -- Bottom
-                    { -0.20626738450566875,  -0.2886751345948129 }, -- rh
+                    { -0.20626738450566875, -0.2886751345948129 }, -- rh
                     { 0.0,                  -0.2886751345948129 }, -- co
-                    { 0.20626738450566875, -0.2886751345948129 }, -- fh
+                    { 0.20626738450566875,  -0.2886751345948129 }, -- fh
                 }
 
             local angVesicaRad <const> = math.rad(angVesicaDeg)
@@ -1529,41 +1530,29 @@ dlg:button {
                 local point <const> = points[i]
                 local x <const> = point[1]
                 local y <const> = point[2]
-
-                local xr <const> = cosa * x - sina * y
-                local yr <const> = cosa * y + sina * x
-
-                local xsr <const> = xRadius * xr
-                local ysr <const> = yRadius * yr
-
-                local xtsr <const> = xCenter + xsr
-                local ytsr <const> = yCenter - ysr
-
-                points[i][1] = xtsr
-                points[i][2] = ytsr
+                local xRot <const> = cosa * x - sina * y
+                local yRot <const> = cosa * y + sina * x
+                points[i][1] = xCenter + xRadius * xRot
+                points[i][2] = yCenter - yRadius * yRot
             end
 
             context:beginPath()
             context:moveTo(points[2][1], points[2][2])
-            context:cubicTo(
-                points[3][1], points[3][2],
-                points[4][1], points[4][2],
-                points[5][1], points[5][2])
-            context:cubicTo(
-                points[6][1], points[6][2],
-                points[7][1], points[7][2],
-                points[8][1], points[8][2])
-            context:cubicTo(
-                points[9][1], points[9][2],
-                points[10][1], points[10][2],
-                points[11][1], points[11][2])
-            context:cubicTo(
-                points[12][1], points[12][2],
-                points[1][1], points[1][2],
-                points[2][1], points[2][2])
+            local j = 0
+            while j < lenPoints do
+                local idx0 <const> = 1 + (2 + j) % lenPoints
+                local idx1 <const> = 1 + (3 + j) % lenPoints
+                local idx2 <const> = 1 + (4 + j) % lenPoints
+                context:cubicTo(
+                    points[idx0][1], points[idx0][2],
+                    points[idx1][1], points[idx1][2],
+                    points[idx2][1], points[idx2][2])
+                j = j + 3
+            end
+            context:closePath()
+
             context.strokeWidth = strokeWeight
             context.color = strokeColor
-            context:closePath()
             context:stroke()
         else
             app.alert {
