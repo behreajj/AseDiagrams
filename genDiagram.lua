@@ -44,8 +44,7 @@ local defaults <const> = {
     maxDimetric = 32,
 
     -- Egg:
-    drawConstruct = false,
-    drawFigure = true,
+    angEggDeg = 0,
 
     -- Hex grid:
     hexRings = 4,
@@ -364,8 +363,7 @@ dlg:combobox {
 
         dlg:modify { id = "dimetricCount", visible = isDimetric }
 
-        dlg:modify { id = "drawConstruct", visible = isEgg }
-        dlg:modify { id = "drawFigure", visible = isEgg }
+        dlg:modify { id = "angEggDeg", visible = isEgg }
 
         dlg:modify { id = "hexRings", visible = isHex }
         dlg:modify { id = "useDimetric", visible = isHex }
@@ -403,22 +401,17 @@ dlg:slider {
 
 dlg:newrow { always = false }
 
-dlg:check {
-    id = "drawFigure",
-    label = "Draw:",
-    text = "Figure",
-    selected = defaults.drawFigure,
+dlg:slider {
+    id = "angEggDeg",
+    label = "Angle:",
+    value = defaults.angEggDeg,
+    min = -180,
+    max = 180,
     focus = false,
     visible = defaults.diagOption == "EGG",
 }
 
-dlg:check {
-    id = "drawConstruct",
-    text = "Guides",
-    selected = defaults.drawConstruct,
-    focus = false,
-    visible = defaults.diagOption == "EGG",
-}
+dlg:newrow { always = false }
 
 dlg:slider {
     id = "hexRings",
@@ -821,134 +814,86 @@ dlg:button {
                 i = i + 1
             end
         elseif diagOption == "EGG" then
-            gridName = "Egg"
+            local angEggDeg <const> = args.angEggDeg
+                or defaults.angEggDeg --[[@as integer]]
 
-            local drawFigure <const> = args.drawFigure --[[@as boolean]]
-            local drawConstruct <const> = args.drawConstruct --[[@as boolean]]
+            gridName = string.format("Egg (%d)", angEggDeg)
 
-            -- Scale by 1/1.0388889 so that mobius figure fits?
-            local halfEdge <const> = shortEdge * 0.5
-            local qrtrEdge <const> = shortEdge * 0.25
-            local sqrt3 <const> = 1.7320508075689
-            local sqrt2 <const> = 1.4142135623731
-            local qrtrRt3 <const> = qrtrEdge / sqrt3
+            local yDsp <const> = 0.22400923773979597
 
-            local figureHeight <const> = yCorrect * halfEdge
-                + yCorrect * qrtrRt3
-            local yDisplace <const> = figureHeight * 0.125
+            ---@type number[][]
+            local points <const> = {
+                -- 0 Right knot
+                { 0.7759907622602041,   -0.4285678640058835 - yDsp }, -- rh
+                { 0.7759907622602041,   -yDsp },                      -- co
+                { 0.7759907622602041,   0.4285678640058835 - yDsp },  -- fh
 
-            local drawFigVerif = drawFigure
-            local drawConstVerif = drawConstruct
-            if (not drawFigure)
-                and (not drawConstruct) then
-                drawFigVerif = defaults.drawFigure
-                drawConstVerif = defaults.drawConstruct
+                -- 1 Top Right knot
+                { 0.6124788925312299,   0.8063636657377999 - yDsp }, -- rh
+                { 0.3214258980044128,   1.097416660264617 - yDsp },  -- co
+                { 0.23277713973922606,  1.1768074267379347 - yDsp }, -- fh
+
+                -- 2 Top knot
+                { 0.11882188744996118,  1.224009237739796 - yDsp }, -- rh
+                { 0.0,                  1.224009237739796 - yDsp }, -- co
+                { -0.11882188744996118, 1.224009237739796 - yDsp }, -- fh
+
+                -- 3 Top left knot
+                { -0.23277713973922606, 1.1768074267379347 - yDsp }, -- rh
+                { -0.3214258980044128,  1.097416660264617 - yDsp },  -- co
+                { -0.6124788925312299,  0.8063636657377999 - yDsp }, -- fh
+
+                -- 4 Left knot
+                { -0.7759907622602041,  0.4285678640058835 - yDsp },  -- rh
+                { -0.7759907622602041,  -yDsp },                      -- co
+                { -0.7759907622602041,  -0.4285678640058835 - yDsp }, -- fh
+
+                -- 5 Bottom knot
+                { -0.4285678640058835,  -0.7759907622602041 - yDsp }, -- rh
+                { 0.0,                  -0.7759907622602041 - yDsp }, -- co
+                { 0.4285678640058835,   -0.7759907622602041 - yDsp }, -- fh
+            }
+
+            local angEggRad <const> = math.rad(angEggDeg)
+            local cosa <const> = math.cos(angEggRad)
+            local sina <const> = math.sin(angEggRad)
+            local xRadius <const> = xCorrect * shortEdge * 0.5
+            local yRadius <const> = yCorrect * shortEdge * 0.5
+
+            local lenPoints <const> = #points
+            local i = 0
+            while i < lenPoints do
+                i = i + 1
+                local point <const> = points[i]
+                local x <const> = point[1]
+                local y <const> = point[2]
+                local xRot <const> = cosa * x - sina * y
+                local yRot <const> = cosa * y + sina * x
+                points[i][1] = xCenter + xRadius * xRot
+                -- If you wanted to rotate around base circle, could add
+                -- displace here.
+                -- points[i][2] = yCenter - yRadius * yRot + yDisplace
+                points[i][2] = yCenter - yRadius * yRot
             end
 
-            if drawConstVerif then
-                drawEllipse(
-                    context,
-                    xCenter, yCenter + yDisplace,
-                    xCorrect * qrtrEdge, yCorrect * qrtrEdge,
-                    strokeColor, strokeWeight,
-                    useAntialiasVerif)
-
-                drawArc(
-                    context,
-                    xCenter - xCorrect * qrtrEdge, yCenter + yDisplace,
-                    xCorrect * halfEdge, yCorrect * halfEdge,
-                    0, pi / 3.0,
-                    strokeColor, strokeWeight,
-                    useAntialiasVerif)
-
-                drawArc(
-                    context,
-                    xCenter + xCorrect * qrtrEdge, yCenter + yDisplace,
-                    xCorrect * halfEdge, yCorrect * halfEdge,
-                    2.0 * pi / 3.0, pi,
-                    strokeColor, strokeWeight,
-                    useAntialiasVerif)
-
-                drawLine(context,
-                    xCenter - xCorrect * qrtrEdge, yCenter + yDisplace,
-                    xCenter + xCorrect * qrtrEdge, yCenter + yDisplace,
-                    strokeColor, strokeWeight)
-
-                drawLine(context,
-                    xCenter, yCenter + yDisplace,
-                    xCenter, yCenter - yCorrect * qrtrEdge * sqrt3 + yDisplace,
-                    strokeColor, strokeWeight)
-
-                drawLine(context,
-                    xCenter - xCorrect * qrtrEdge,
-                    yCenter + yDisplace,
-                    xCenter + xCorrect * qrtrEdge - xCorrect * qrtrRt3,
-                    yCenter - yCorrect * qrtrEdge * sqrt2 + yDisplace,
-                    strokeColor, strokeWeight)
-
-                drawLine(context,
-                    xCenter + xCorrect * qrtrEdge,
-                    yCenter + yDisplace,
-                    xCenter - xCorrect * qrtrEdge + xCorrect * qrtrRt3,
-                    yCenter - yCorrect * qrtrEdge * sqrt2 + yDisplace,
-                    strokeColor, strokeWeight)
-
-                drawEllipse(
-                    context,
-                    xCenter,
-                    yCenter - yCorrect * qrtrEdge + yDisplace,
-                    xCorrect * qrtrRt3,
-                    yCorrect * qrtrRt3,
-                    strokeColor, strokeWeight,
-                    useAntialiasVerif)
+            context:beginPath()
+            context:moveTo(points[2][1], points[2][2])
+            local j = 0
+            while j < lenPoints do
+                local idx0 <const> = 1 + (2 + j) % lenPoints
+                local idx1 <const> = 1 + (3 + j) % lenPoints
+                local idx2 <const> = 1 + (4 + j) % lenPoints
+                context:cubicTo(
+                    points[idx0][1], points[idx0][2],
+                    points[idx1][1], points[idx1][2],
+                    points[idx2][1], points[idx2][2])
+                j = j + 3
             end
+            context:closePath()
 
-            if drawFigVerif then
-                context:beginPath()
-                context:moveTo(
-                    xCenter + xCorrect * qrtrEdge,
-                    yCenter + yDisplace)
-                context:cubicTo(
-                    xCenter + xCorrect * qrtrEdge,
-                    yCenter + yDisplace - yCorrect * halfEdge * 0.26521654,
-                    xCenter + xCorrect * halfEdge * 0.39464325,
-                    yCenter + yDisplace - yCorrect * halfEdge * 0.51957039,
-                    xCenter + xCorrect * halfEdge * 0.20710682,
-                    yCenter + yDisplace - yCorrect * halfEdge * 0.70710682)
-                context:cubicTo(
-                    xCenter + xCorrect * halfEdge * 0.09138951,
-                    yCenter + yDisplace - yCorrect * halfEdge * 0.81685876,
-                    xCenter - xCorrect * halfEdge * 0.09138951,
-                    yCenter + yDisplace - yCorrect * halfEdge * 0.81685876,
-                    xCenter - xCorrect * halfEdge * 0.20710682,
-                    yCenter + yDisplace - yCorrect * halfEdge * 0.70710682)
-                context:cubicTo(
-                    xCenter - xCorrect * halfEdge * 0.39464325,
-                    yCenter + yDisplace - yCorrect * halfEdge * 0.51957039,
-                    xCenter - xCorrect * qrtrEdge,
-                    yCenter + yDisplace - yCorrect * halfEdge * 0.26521654,
-                    xCenter - xCorrect * qrtrEdge,
-                    yCenter + yDisplace)
-                context:cubicTo(
-                    xCenter - xCorrect * qrtrEdge,
-                    yCenter + yDisplace + yCorrect * halfEdge * 0.27614233,
-                    xCenter - xCorrect * halfEdge * 0.27614233,
-                    yCenter + yDisplace + yCorrect * qrtrEdge,
-                    xCenter,
-                    yCenter + yDisplace + yCorrect * qrtrEdge)
-                context:cubicTo(
-                    xCenter + xCorrect * halfEdge * 0.27614233,
-                    yCenter + yDisplace + yCorrect * qrtrEdge,
-                    xCenter + xCorrect * qrtrEdge,
-                    yCenter + yDisplace + yCorrect * halfEdge * 0.27614233,
-                    xCenter + xCorrect * qrtrEdge,
-                    yCenter + yDisplace)
-
-                context.strokeWidth = strokeWeight
-                context.color = strokeColor
-                context:closePath()
-                context:stroke()
-            end
+            context.strokeWidth = strokeWeight
+            context.color = strokeColor
+            context:stroke()
         elseif diagOption == "GOLDEN_RECT" then
             gridName = "Golden Rectangle"
 
@@ -1470,7 +1415,10 @@ dlg:button {
                 or defaults.angVesicaDeg --[[@as integer]]
             local useSeedRatio <const> = args.useSeedRatio --[[@as boolean]]
 
-            gridName = string.format("VesicaPiscis (%d)", angVesicaDeg)
+            gridName = string.format("Vesica Piscis (%d)", angVesicaDeg)
+
+            -- TODO: For consistency with Blender version, double the
+            -- input points, then scale by the radius instead of the diameter.
 
             ---@type number[][]
             local points <const> = useSeedRatio and
@@ -1522,8 +1470,8 @@ dlg:button {
             local sina <const> = math.sin(angVesicaRad)
             local xRadius <const> = xCorrect * shortEdge
             local yRadius <const> = yCorrect * shortEdge
-            local lenPoints <const> = #points
 
+            local lenPoints <const> = #points
             local i = 0
             while i < lenPoints do
                 i = i + 1
