@@ -40,6 +40,10 @@ Golden Rectangle
 
 Hexagon Grid
 
+![Inscribed Polygon](inscribedPoly.png)
+
+Inscribed Polygon
+
 ![Nested Circles](nestedCircles.png)
 
 Nested Circles
@@ -47,10 +51,6 @@ Nested Circles
 ![Polar Grid](polarGrid.png)
 
 Polar Grid
-
-![Rule of Thirds](ruleOfThirds.png)
-
-Rule of Thirds
 
 ![Sand Reckoner](sandReckoner.png)
 
@@ -68,6 +68,6 @@ Star
 
 Vesica Piscis
 
-Not shown are the in-circle and in-square options.
+Not shown are the in-circle, in-square and rule of thirds options.
 
 🇹🇼 🇺🇦

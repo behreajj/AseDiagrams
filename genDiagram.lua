@@ -1,12 +1,16 @@
 local diagOptions <const> = {
     -- stereographic projection?
     -- https://en.wikipedia.org/wiki/Tomoe
+    -- TODO: Arc
+    -- TODO: Circles arranged in a circle at an offset to create a
+    -- swirl pattern?
     "DIMETRIC_GRID",
     "EGG",
     "GOLDEN_RECT",
     "HEX_GRID",
     "IN_CIRCLE",
     "IN_SQUARE",
+    "INSCRIBED_POLY",
     "NESTED_CIRCLES",
     "POLAR_GRID",
     "RULE_OF_THIRDS",
@@ -51,6 +55,15 @@ local defaults <const> = {
     minRings = 1,
     maxRings = 32,
     useDimetric = false,
+
+    -- Inscribed polygons:
+    polyIter = 4,
+    sidesPoly = 3,
+    angPolyDeg = 0,
+    polyMin = 3,
+    polyMax = 10,
+    minIter = 1,
+    maxIter = 16,
 
     -- Nested circles:
     nestedCount = 6,
@@ -355,6 +368,7 @@ dlg:combobox {
         local isDimetric <const> = diagOption == "DIMETRIC_GRID"
         local isEgg <const> = diagOption == "EGG"
         local isHex <const> = diagOption == "HEX_GRID"
+        local isPoly <const> = diagOption == "INSCRIBED_POLY"
         local isNest <const> = diagOption == "NESTED_CIRCLES"
         local isPolar <const> = diagOption == "POLAR_GRID"
         local isSand <const> = diagOption == "SAND_RECKONER"
@@ -367,6 +381,10 @@ dlg:combobox {
 
         dlg:modify { id = "hexRings", visible = isHex }
         dlg:modify { id = "useDimetric", visible = isHex }
+
+        dlg:modify { id = "polyIter", visible = isPoly }
+        dlg:modify { id = "sidesPoly", visible = isPoly }
+        dlg:modify { id = "angPolyDeg", visible = isPoly }
 
         dlg:modify { id = "nestedCount", visible = isNest }
         dlg:modify { id = "showMeasure", visible = isNest }
@@ -432,6 +450,42 @@ dlg:check {
     selected = defaults.useDimetric,
     focus = false,
     visible = defaults.diagOption == "HEX_GRID",
+}
+
+dlg:newrow { always = false }
+
+dlg:slider {
+    id = "polyIter",
+    label = "Count:",
+    value = defaults.polyIter,
+    min = defaults.minIter,
+    max = defaults.maxIter,
+    focus = false,
+    visible = defaults.diagOption == "NESTED_CIRCLES",
+}
+
+dlg:newrow { always = false }
+
+dlg:slider {
+    id = "sidesPoly",
+    label = "Sides:",
+    value = defaults.sidesPoly,
+    min = defaults.polyMin,
+    max = defaults.polyMax,
+    focus = false,
+    visible = defaults.diagOption == "INSCRIBED_POLY",
+}
+
+dlg:newrow { always = false }
+
+dlg:slider {
+    id = "angPolyDeg",
+    label = "Angle:",
+    value = defaults.angPolyDeg,
+    min = -180,
+    max = 180,
+    focus = false,
+    visible = defaults.diagOption == "INSCRIBED_POLY",
 }
 
 dlg:newrow { always = false }
@@ -1085,6 +1139,45 @@ dlg:button {
                 xRadius, yRadius,
                 strokeColor, strokeWeight,
                 useAntialiasVerif)
+        elseif diagOption == "INSCRIBED_POLY" then
+            local polyIter <const> = args.polyIter
+                or defaults.polyIter --[[@as integer]]
+            local sidesPoly <const> = args.sidesPoly
+                or defaults.sidesPoly --[[@as integer]]
+            local angPolyDeg <const> = args.angPolyDeg
+                or defaults.angPolyDeg --[[@as integer]]
+
+            local sidesVerif <const> = math.max(3, math.abs(sidesPoly))
+            local angPolyRad <const> = math.rad(270 - angPolyDeg)
+            local toTheta <const> = tau / sidesVerif
+
+            local rScalar <const> = math.cos(0.5 * toTheta)
+
+            gridName = string.format("Inscribed Polygon %d (%d)", sidesVerif, angPolyDeg)
+
+            local xRadius <const> = xCorrect * shortEdge * 0.5
+            local yRadius <const> = yCorrect * shortEdge * 0.5
+
+            local xr = xRadius
+            local yr = yRadius
+            local ang = angPolyRad
+
+            local i = 0
+            while i < polyIter do
+                drawPolygon(
+                    context,
+                    xCenter, yCenter,
+                    xr, yr,
+                    sidesVerif, ang,
+                    strokeColor, strokeWeight,
+                    useAntialias)
+
+                xr = xr * rScalar
+                yr = yr * rScalar
+                ang = ang + toTheta * 0.5
+
+                i = i + 1
+            end
         elseif diagOption == "NESTED_CIRCLES" then
             local count <const> = args.nestedCount
                 or defaults.nestedCount --[[@as integer]]
@@ -1507,13 +1600,15 @@ dlg:button {
             return
         end
 
-        local hasBkg <const> = sprite.backgroundLayer ~= nil
         local frObjs <const> = sprite.frames
         local lenFrObjs <const> = #frObjs
         local activeLayer <const> = app.layer
             or sprite.layers[1] --[[@as Layer]]
         local activeFrObj <const> = app.frame
             or frObjs[1] --[[@as Frame]]
+        local isBkg <const> = activeLayer.isBackground
+        local stackIndex <const> = activeLayer.stackIndex
+        local hasBkg <const> = sprite.backgroundLayer ~= nil
 
         local xtl = 0
         local ytl = 0
@@ -1561,15 +1656,11 @@ dlg:button {
             if layerPlace == "BOTTOM" then
                 gridLayer.stackIndex = hasBkg and 2 or 1
             elseif layerPlace == "BOTTOM_LOCAL" then
-                gridLayer.stackIndex = 1
+                gridLayer.stackIndex = isBkg and 2 or 1
             elseif layerPlace == "ABOVE" then
-                gridLayer.stackIndex = activeLayer.stackIndex + 1
+                gridLayer.stackIndex = stackIndex + 1
             elseif layerPlace == "BELOW" then
-                if activeLayer.isBackground then
-                    gridLayer.stackIndex = activeLayer.stackIndex + 1
-                else
-                    gridLayer.stackIndex = activeLayer.stackIndex
-                end
+                gridLayer.stackIndex = isBkg and stackIndex + 1 or stackIndex
             end
         end)
 
