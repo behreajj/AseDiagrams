@@ -1,9 +1,9 @@
 local diagOptions <const> = {
     -- stereographic projection?
     -- https://en.wikipedia.org/wiki/Tomoe
-    -- TODO: Arc
     -- TODO: Circles arranged in a circle at an offset to create a
     -- swirl pattern?
+    "ARC",
     "DIMETRIC_GRID",
     "EGG",
     "GOLDEN_RECT",
@@ -29,6 +29,11 @@ local layerPlaces <const> = {
     "BOTTOM_LOCAL",
 }
 
+local arcModes <const> = {
+    "PIE",
+    "STROKE",
+}
+
 local defaults <const> = {
     diagOption = "POLAR_GRID",
     strokeWeight = 1,
@@ -41,6 +46,11 @@ local defaults <const> = {
 
     xOffset = 0,
     yOffset = 0,
+
+    -- Arc:
+    arcMode = "PIE",
+    arcStartDeg = 0,
+    arcStopDeg = 90,
 
     -- Dimetric grid:
     dimetricCount = 12,
@@ -173,6 +183,7 @@ local function drawLine(
 end
 
 ---@param context GraphicsContext canvas
+---@param arcMode "STROKE"|"PIE" arc draw mode
 ---@param xc number center x
 ---@param yc number center y
 ---@param w number radius x
@@ -184,10 +195,25 @@ end
 ---@param useAntialias? boolean use antialias
 local function drawArc(
     context,
+    arcMode,
     xc, yc, w, h,
     startAngle, stopAngle,
     strokeClr, strokeWeight,
     useAntialias)
+    local tau <const> = math.pi + math.pi
+    local halfpi <const> = math.pi * 0.5
+
+    local stAngVerif <const> = math.min(startAngle, stopAngle)
+    local edAngVerif <const> = math.max(startAngle, stopAngle)
+    local arcLength <const> = math.min(edAngVerif - stAngVerif, tau)
+
+    if math.abs(tau - arcLength) < 0.00139
+        or math.abs(arcLength) < 0.00139 then
+        drawEllipse(context, xc, yc, w, h,
+            strokeClr, strokeWeight, useAntialias)
+        return
+    end
+
     local useStrokeVerif <const> = strokeWeight > 0
         and strokeClr.alpha > 0
     if (not useStrokeVerif) then return end
@@ -197,12 +223,6 @@ local function drawArc(
 
     local cos <const> = math.cos
     local sin <const> = math.sin
-    local tau <const> = math.pi + math.pi
-    local halfpi <const> = math.pi * 0.5
-
-    local stAngVerif <const> = math.min(startAngle, stopAngle)
-    local edAngVerif <const> = math.max(startAngle, stopAngle)
-    local arcLength <const> = math.min(edAngVerif - stAngVerif, tau)
 
     local arcLen01 <const> = arcLength / tau
     local kntAdd <const> = arcLen01 % 0.25 > 0.00001 and 1 or 0
@@ -248,6 +268,11 @@ local function drawArc(
         cp1y = yap - hmcosa
 
         i = i + 1
+    end
+
+    if arcMode == "PIE" then
+        context:lineTo(xcVerif, ycVerif)
+        context:closePath()
     end
 
     context.strokeWidth = strokeWeight
@@ -366,6 +391,8 @@ dlg:combobox {
     onchange = function()
         local args <const> = dlg.data
         local diagOption <const> = args.diagOption
+
+        local isArc <const> = diagOption == "ARC"
         local isDimetric <const> = diagOption == "DIMETRIC_GRID"
         local isEgg <const> = diagOption == "EGG"
         local isHex <const> = diagOption == "HEX_GRID"
@@ -375,6 +402,10 @@ dlg:combobox {
         local isSand <const> = diagOption == "SAND_RECKONER"
         local isStar <const> = diagOption == "STAR"
         local isVesica <const> = diagOption == "VESICA_PISCIS"
+
+        dlg:modify { id = "arcMode", visible = isArc }
+        dlg:modify { id = "arcStartDeg", visible = isArc }
+        dlg:modify { id = "arcStopDeg", visible = isArc }
 
         dlg:modify { id = "dimetricCount", visible = isDimetric }
 
@@ -405,6 +436,39 @@ dlg:combobox {
         dlg:modify { id = "usePivot", visible = isVesica }
         dlg:modify { id = "angVesicaDeg", visible = isVesica }
     end,
+}
+
+dlg:newrow { always = false }
+
+dlg:combobox {
+    id = "arcMode",
+    label = "Type:",
+    option = defaults.arcMode,
+    options = arcModes,
+    focus = false,
+    visible = defaults.diagOption == "ARC"
+}
+
+dlg:newrow { always = false }
+
+dlg:slider {
+    id = "arcStartDeg",
+    label = "Start:",
+    value = defaults.arcStartDeg,
+    min = 0,
+    max = 360,
+    focus = false,
+    visible = defaults.diagOption == "ARC",
+}
+
+dlg:slider {
+    id = "arcStopDeg",
+    label = "Stop:",
+    value = defaults.arcStopDeg,
+    min = 0,
+    max = 360,
+    focus = false,
+    visible = defaults.diagOption == "ARC",
 }
 
 dlg:newrow { always = false }
@@ -829,17 +893,33 @@ dlg:button {
         local sin <const> = math.sin
         local pi <const> = math.pi
         local tau <const> = pi + pi
-
-        -- phi = 1.618033988749895
-        -- phiInv = 0.6180339887498948
         local phi <const> = (1 + math.sqrt(5)) / 2
 
-        -- goldenAngle = 2.399963229728653 radians
-        -- or 137.50776405003785 degrees
-        -- local goldenAngle <const> = tau / (phi * phi)
-
         local gridName = "Layer"
-        if diagOption == "DIMETRIC_GRID" then
+        if diagOption == "ARC" then
+            local arcMode <const> = args.arcMode
+                or defaults.arcMode --[[@as string]]
+            local arcStartDeg <const> = args.arcStartDeg
+                or defaults.arcStartDeg --[[@as integer]]
+            local arcStopDeg <const> = args.arcStopDeg
+                or defaults.arcStopDeg --[[@as integer]]
+
+            gridName = string.format(
+                "Arc from %d to %d",
+                arcStartDeg, arcStopDeg)
+
+            local arcStartRad <const> = math.rad(arcStartDeg)
+            local arcStopRad <const> = math.rad(arcStopDeg)
+            local xRadius <const> = xCorrect * shortEdge * 0.5
+            local yRadius <const> = yCorrect * shortEdge * 0.5
+
+            drawArc(context, arcMode,
+                xCenter, yCenter,
+                xRadius, yRadius,
+                arcStartRad, arcStopRad,
+                strokeColor, strokeWeight,
+                useAntialiasVerif)
+        elseif diagOption == "DIMETRIC_GRID" then
             local dimetricCount <const> = args.dimetricCount
                 or defaults.dimetricCount --[[@as integer]]
 
@@ -1026,40 +1106,35 @@ dlg:button {
 
             local rx <const> = xCorrect * shortEdge
             local ry <const> = yCorrect * shortEdge
-            drawArc(
-                context,
+            drawArc(context, "STROKE",
                 xConst1, bottom,
                 rx, ry,
                 pi * 0.5, pi,
                 strokeColor, strokeWeight,
                 useAntialiasVerif)
 
-            drawArc(
-                context,
+            drawArc(context, "STROKE",
                 xConst1, yConst2,
                 rx * phiInv, ry * phiInv,
                 0.0, pi * 0.5,
                 strokeColor, strokeWeight,
                 useAntialiasVerif)
 
-            drawArc(
-                context,
+            drawArc(context, "STROKE",
                 xConst3, yConst2,
                 rx * phiInvE2, ry * phiInvE2,
                 pi * 1.5, tau,
                 strokeColor, strokeWeight,
                 useAntialiasVerif)
 
-            drawArc(
-                context,
+            drawArc(context, "STROKE",
                 xConst3, yConst4,
                 rx * phiInvE3, ry * phiInvE3,
                 pi, pi * 1.5,
                 strokeColor, strokeWeight,
                 useAntialiasVerif)
 
-            drawArc(
-                context,
+            drawArc(context, "STROKE",
                 xConst5, yConst4,
                 rx * phiInvE4, ry * phiInvE4,
                 pi * 0.5, pi,
