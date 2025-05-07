@@ -29,6 +29,7 @@ local layerPlaces <const> = {
     "BOTTOM_LOCAL",
 }
 
+    -- TODO: Is sector mode necessary?
 local arcModes <const> = {
     "CHORD",
     "PIE",
@@ -204,9 +205,10 @@ local function drawArc(
     local tau <const> = math.pi + math.pi
     local halfpi <const> = math.pi * 0.5
 
-    local stAngVerif <const> = math.min(startAngle, stopAngle)
-    local edAngVerif <const> = math.max(startAngle, stopAngle)
-    local arcLength <const> = math.min(edAngVerif - stAngVerif, tau)
+    local stAngVerif <const> = startAngle % tau
+    local edAngVerif = stopAngle % tau
+    local arcLength <const> = (edAngVerif - stAngVerif) % tau
+    edAngVerif = stAngVerif + arcLength
 
     if math.abs(tau - arcLength) < 0.00139
         or math.abs(arcLength) < 0.00139 then
