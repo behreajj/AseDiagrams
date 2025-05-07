@@ -30,6 +30,7 @@ local layerPlaces <const> = {
 }
 
 local arcModes <const> = {
+    "CHORD",
     "PIE",
     "STROKE",
 }
@@ -183,7 +184,7 @@ local function drawLine(
 end
 
 ---@param context GraphicsContext canvas
----@param arcMode "STROKE"|"PIE" arc draw mode
+---@param arcMode "CHORD"|"STROKE"|"PIE" arc draw mode
 ---@param xc number center x
 ---@param yc number center y
 ---@param w number radius x
@@ -270,7 +271,9 @@ local function drawArc(
         i = i + 1
     end
 
-    if arcMode == "PIE" then
+    if arcMode == "CHORD" then
+        context:closePath()
+    elseif arcMode == "PIE" then
         context:lineTo(xcVerif, ycVerif)
         context:closePath()
     end
