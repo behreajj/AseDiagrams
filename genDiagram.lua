@@ -95,6 +95,7 @@ local defaults <const> = {
 
     -- Vesica Piscis:
     useSeedRatio = false,
+    usePivot = false,
     angVesicaDeg = 0,
 
     wSprite = 640,
@@ -401,6 +402,7 @@ dlg:combobox {
         dlg:modify { id = "angStarDeg", visible = isStar }
 
         dlg:modify { id = "useSeedRatio", visible = isVesica }
+        dlg:modify { id = "usePivot", visible = isVesica }
         dlg:modify { id = "angVesicaDeg", visible = isVesica }
     end,
 }
@@ -615,9 +617,17 @@ dlg:newrow { always = false }
 
 dlg:check {
     id = "useSeedRatio",
-    label = "Ratio:",
+    label = "Enable:",
     text = "Seed of Life",
     selected = defaults.useSeedRatio,
+    focus = false,
+    visible = defaults.diagOption == "VESICA_PISCIS",
+}
+
+dlg:check {
+    id = "usePivot",
+    text = "Pivot",
+    selected = defaults.usePivot,
     focus = false,
     visible = defaults.diagOption == "VESICA_PISCIS",
 }
@@ -1286,11 +1296,7 @@ dlg:button {
                 and defaults.lineCount
                 or lineCount
 
-            local angOffsetRad <const> = (useAntialiasVerif
-                    and (angOffsetDeg == 26
-                        or angOffsetDeg == 27))
-                and 0.46364760900081
-                or math.rad(angOffsetDeg)
+            local angOffsetRad <const> = math.rad(angOffsetDeg)
 
             local xMaxRadius <const> = xCorrect * shortEdge * 0.5
             local xMinRadius <const> = rcVerif ~= 0
@@ -1507,6 +1513,7 @@ dlg:button {
             local angVesicaDeg <const> = args.angVesicaDeg
                 or defaults.angVesicaDeg --[[@as integer]]
             local useSeedRatio <const> = args.useSeedRatio --[[@as boolean]]
+            local usePivot <const> = args.usePivot --[[@as boolean]]
 
             gridName = string.format("Vesica Piscis (%d)", angVesicaDeg)
 
@@ -1555,19 +1562,23 @@ dlg:button {
                     { 0.4125347690113375,  -0.5773502691896258 }, -- fh
                 }
 
+            local pivotScalar <const> = usePivot and 0.5 or 1.0
+            local xPivot <const> = usePivot and 1.0 or 0.0
+            local yPivot <const> = 0.0
+
             local angVesicaRad <const> = math.rad(angVesicaDeg)
             local cosa <const> = math.cos(angVesicaRad)
             local sina <const> = math.sin(angVesicaRad)
-            local xRadius <const> = xCorrect * shortEdge * 0.5
-            local yRadius <const> = yCorrect * shortEdge * 0.5
+            local xRadius <const> = pivotScalar * xCorrect * shortEdge * 0.5
+            local yRadius <const> = pivotScalar * yCorrect * shortEdge * 0.5
 
             local lenPoints <const> = #points
             local i = 0
             while i < lenPoints do
                 i = i + 1
                 local point <const> = points[i]
-                local x <const> = point[1]
-                local y <const> = point[2]
+                local x <const> = point[1] + xPivot
+                local y <const> = point[2] - yPivot
                 local xRot <const> = cosa * x - sina * y
                 local yRot <const> = cosa * y + sina * x
                 points[i][1] = xCenter + xRadius * xRot
