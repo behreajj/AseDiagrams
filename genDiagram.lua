@@ -29,7 +29,7 @@ local layerPlaces <const> = {
     "BOTTOM_LOCAL",
 }
 
-    -- TODO: Is sector mode necessary?
+-- TODO: Is sector mode necessary?
 local arcModes <const> = {
     "CHORD",
     "PIE",
@@ -447,7 +447,7 @@ dlg:newrow { always = false }
 
 dlg:combobox {
     id = "arcMode",
-    label = "Type:",
+    label = "Subtype:",
     option = defaults.arcMode,
     options = arcModes,
     focus = false,
