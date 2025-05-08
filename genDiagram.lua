@@ -1,15 +1,16 @@
 local diagOptions <const> = {
     -- stereographic projection?
     -- https://en.wikipedia.org/wiki/Tomoe
-    -- TODO: Circles arranged in a circle at an offset to create a
+    -- Circles arranged in a circle at an offset to create a
     -- swirl pattern?
     "ARC",
     "DIMETRIC_GRID",
     "EGG",
     "GOLDEN_RECT",
     "HEX_GRID",
-    "IN_CIRCLE",
-    "IN_SQUARE",
+    -- Too many entries make the dropdown buggy.
+    -- "IN_CIRCLE",
+    -- "IN_SQUARE",
     "INSCRIBED_POLY",
     "NESTED_CIRCLES",
     "POLAR_GRID",

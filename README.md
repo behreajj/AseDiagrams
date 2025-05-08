@@ -72,6 +72,4 @@ Star
 
 Vesica Piscis
 
-Not shown are the arc, in-circle, in-square and rule of thirds options.
-
 🇹🇼 🇺🇦
