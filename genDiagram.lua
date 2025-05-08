@@ -30,10 +30,10 @@ local layerPlaces <const> = {
     "BOTTOM_LOCAL",
 }
 
--- TODO: Is sector mode necessary?
 local arcModes <const> = {
     "CHORD",
     "PIE",
+    "SECTOR",
     "STROKE",
 }
 
@@ -54,6 +54,7 @@ local defaults <const> = {
     arcMode = "PIE",
     arcStartDeg = 0,
     arcStopDeg = 90,
+    arcInsetFac = 67,
 
     -- Dimetric grid:
     dimetricCount = 12,
@@ -186,11 +187,12 @@ local function drawLine(
 end
 
 ---@param context GraphicsContext canvas
----@param arcMode "CHORD"|"STROKE"|"PIE" arc draw mode
+---@param arcMode "CHORD"|"PIE"|"SECTOR"|"STROKE" arc draw mode
 ---@param xc number center x
 ---@param yc number center y
 ---@param w number radius x
 ---@param h number radius y
+---@param insetFac number inset factor, sector mode only
 ---@param startAngle number start angle in radians
 ---@param stopAngle number stop angle in radians
 ---@param strokeClr Color stroke color
@@ -199,7 +201,7 @@ end
 local function drawArc(
     context,
     arcMode,
-    xc, yc, w, h,
+    xc, yc, w, h, insetFac,
     startAngle, stopAngle,
     strokeClr, strokeWeight,
     useAntialias)
@@ -225,8 +227,7 @@ local function drawArc(
     local xcVerif <const> = useAntialias and xc or math.floor(xc)
     local ycVerif <const> = useAntialias and yc or math.floor(yc)
 
-    local cos <const> = math.cos
-    local sin <const> = math.sin
+    local cos <const>, sin <const> = math.cos, math.sin
 
     local arcLen01 <const> = arcLength / tau
     local kntAdd <const> = arcLen01 % 0.25 > 0.00001 and 1 or 0
@@ -236,41 +237,25 @@ local function drawArc(
     local xhm <const> = w * (4.0 / 3.0) * math.tan(halfpi * invKnCt)
     local yhm <const> = h * (4.0 / 3.0) * math.tan(halfpi * invKnCt)
 
-    local cosAngle = cos(-stAngVerif)
-    local sinAngle = sin(-stAngVerif)
-    local xap = xcVerif + w * cosAngle
-    local yap = ycVerif + h * sinAngle
-    local hmsina = sinAngle * xhm
-    local hmcosa = cosAngle * yhm
-    local cp1x = xap + hmsina
-    local cp1y = yap - hmcosa
-    local cp2x = 0
-    local cp2y = 0
+    local cosa, sina = cos(-stAngVerif), sin(-stAngVerif)
+    local xap, yap = xcVerif + w * cosa, ycVerif + h * sina
+    local hmsina, hmcosa = sina * xhm, cosa * yhm
+    local cp1x, cp1y = xap + hmsina, yap - hmcosa
+    local cp2x, cp2y = 0, 0
 
     context:beginPath()
     context:moveTo(xap, yap)
 
     local i = 1
     while i < knCtVerif do
-        local t = i * toStep
-        local u = 1.0 - t
-        local angle = u * stAngVerif + t * edAngVerif
-
-        cosAngle = cos(-angle)
-        sinAngle = sin(-angle)
-        xap = xcVerif + w * cosAngle
-        yap = ycVerif + h * sinAngle
-
-        hmsina = sinAngle * xhm
-        hmcosa = cosAngle * yhm
-        cp2x = xap - hmsina
-        cp2y = yap + hmcosa
-
+        local t <const> = i * toStep
+        local angle <const> = (1.0 - t) * stAngVerif + t * edAngVerif
+        cosa, sina = cos(-angle), sin(-angle)
+        xap, yap = xcVerif + w * cosa, ycVerif + h * sina
+        hmsina, hmcosa = sina * xhm, cosa * yhm
+        cp2x, cp2y = xap - hmsina, yap + hmcosa
         context:cubicTo(cp1x, cp1y, cp2x, cp2y, xap, yap)
-
-        cp1x = xap + hmsina
-        cp1y = yap - hmcosa
-
+        cp1x, cp1y = xap + hmsina, yap - hmcosa
         i = i + 1
     end
 
@@ -278,6 +263,33 @@ local function drawArc(
         context:closePath()
     elseif arcMode == "PIE" then
         context:lineTo(xcVerif, ycVerif)
+        context:closePath()
+    elseif arcMode == "SECTOR" then
+        local wIns <const> = w * insetFac
+        local hIns <const> = h * insetFac
+        local xhmIns <const> = xhm * insetFac
+        local yhmIns <const> = yhm * insetFac
+
+        cosa, sina = cos(-edAngVerif), sin(-edAngVerif)
+        xap, yap = xcVerif + wIns * cosa, ycVerif + hIns * sina
+        hmsina, hmcosa = sina * xhmIns, cosa * yhmIns
+        cp1x, cp1y = xap - hmsina, yap + hmcosa
+
+        context:lineTo(xap, yap)
+
+        local j = 1
+        while j < knCtVerif do
+            local t <const> = j * toStep
+            local angle <const> = (1.0 - t) * edAngVerif + t * stAngVerif
+            cosa, sina = cos(-angle), sin(-angle)
+            xap, yap = xcVerif + wIns * cosa, ycVerif + hIns * sina
+            hmsina, hmcosa = sina * xhmIns, cosa * yhmIns
+            cp2x, cp2y = xap + hmsina, yap - hmcosa
+            context:cubicTo(cp1x, cp1y, cp2x, cp2y, xap, yap)
+            cp1x, cp1y = xap - hmsina, yap + hmcosa
+            j = j + 1
+        end
+
         context:closePath()
     end
 
@@ -356,16 +368,11 @@ local function drawRect(
     local xcVerif <const> = useAntialias and xc or math.floor(xc)
     local ycVerif <const> = useAntialias and yc or math.floor(yc)
 
-    local right <const> = xcVerif + w
-    local left <const> = xcVerif - w
-    local top <const> = ycVerif + h
-    local bottom <const> = ycVerif - h
-
     context:beginPath()
-    context:moveTo(left, top)
-    context:lineTo(right, top)
-    context:lineTo(right, bottom)
-    context:lineTo(left, bottom)
+    context:moveTo(xcVerif - w, ycVerif + h)
+    context:lineTo(xcVerif + w, ycVerif + h)
+    context:lineTo(xcVerif + w, ycVerif - h)
+    context:lineTo(xcVerif - w, ycVerif - h)
     context:closePath()
 
     context.strokeWidth = strokeWeight
@@ -397,8 +404,10 @@ dlg:combobox {
     onchange = function()
         local args <const> = dlg.data
         local diagOption <const> = args.diagOption
+        local arcMode <const> = args.arcMode
 
         local isArc <const> = diagOption == "ARC"
+        local isSector <const> = arcMode == "SECTOR"
         local isDimetric <const> = diagOption == "DIMETRIC_GRID"
         local isEgg <const> = diagOption == "EGG"
         local isHex <const> = diagOption == "HEX_GRID"
@@ -412,6 +421,7 @@ dlg:combobox {
         dlg:modify { id = "arcMode", visible = isArc }
         dlg:modify { id = "arcStartDeg", visible = isArc }
         dlg:modify { id = "arcStopDeg", visible = isArc }
+        dlg:modify { id = "arcInsetFac", visible = isArc and isSector }
 
         dlg:modify { id = "dimetricCount", visible = isDimetric }
 
@@ -452,14 +462,34 @@ dlg:combobox {
     option = defaults.arcMode,
     options = arcModes,
     focus = false,
+    visible = defaults.diagOption == "ARC",
+    onchange = function()
+        local args <const> = dlg.data
+        local arcMode <const> = args.arcMode
+        local isSector <const> = arcMode == "SECTOR"
+        dlg:modify { id = "arcInsetFac", visible = isSector }
+    end
+}
+
+dlg:newrow { always = false }
+
+dlg:slider {
+    id = "arcInsetFac",
+    label = "Inset:",
+    value = defaults.arcInsetFac,
+    min = 1,
+    max = 99,
+    focus = false,
     visible = defaults.diagOption == "ARC"
+        and defaults.arcMode == "SECTOR",
 }
 
 dlg:newrow { always = false }
 
 dlg:slider {
     id = "arcStartDeg",
-    label = "Start:",
+    -- label = "Start:",
+    label = "Angles:",
     value = defaults.arcStartDeg,
     min = 0,
     max = 360,
@@ -469,7 +499,7 @@ dlg:slider {
 
 dlg:slider {
     id = "arcStopDeg",
-    label = "Stop:",
+    -- label = "Stop:",
     value = defaults.arcStopDeg,
     min = 0,
     max = 360,
@@ -905,6 +935,8 @@ dlg:button {
         if diagOption == "ARC" then
             local arcMode <const> = args.arcMode
                 or defaults.arcMode --[[@as string]]
+            local arcInsetFac <const> = args.arcInsetFac
+                or defaults.arcInsetFac --[[@as integer]]
             local arcStartDeg <const> = args.arcStartDeg
                 or defaults.arcStartDeg --[[@as integer]]
             local arcStopDeg <const> = args.arcStopDeg
@@ -921,7 +953,7 @@ dlg:button {
 
             drawArc(context, arcMode,
                 xCenter, yCenter,
-                xRadius, yRadius,
+                xRadius, yRadius, arcInsetFac * 0.01,
                 arcStartRad, arcStopRad,
                 strokeColor, strokeWeight,
                 useAntialiasVerif)
@@ -1114,35 +1146,35 @@ dlg:button {
             local ry <const> = yCorrect * shortEdge
             drawArc(context, "STROKE",
                 xConst1, bottom,
-                rx, ry,
+                rx, ry, 0.0,
                 pi * 0.5, pi,
                 strokeColor, strokeWeight,
                 useAntialiasVerif)
 
             drawArc(context, "STROKE",
                 xConst1, yConst2,
-                rx * phiInv, ry * phiInv,
+                rx * phiInv, ry * phiInv, 0.0,
                 0.0, pi * 0.5,
                 strokeColor, strokeWeight,
                 useAntialiasVerif)
 
             drawArc(context, "STROKE",
                 xConst3, yConst2,
-                rx * phiInvE2, ry * phiInvE2,
+                rx * phiInvE2, ry * phiInvE2, 0.0,
                 pi * 1.5, tau,
                 strokeColor, strokeWeight,
                 useAntialiasVerif)
 
             drawArc(context, "STROKE",
                 xConst3, yConst4,
-                rx * phiInvE3, ry * phiInvE3,
+                rx * phiInvE3, ry * phiInvE3, 0.0,
                 pi, pi * 1.5,
                 strokeColor, strokeWeight,
                 useAntialiasVerif)
 
             drawArc(context, "STROKE",
                 xConst5, yConst4,
-                rx * phiInvE4, ry * phiInvE4,
+                rx * phiInvE4, ry * phiInvE4, 0.0,
                 pi * 0.5, pi,
                 strokeColor, strokeWeight,
                 useAntialiasVerif)
@@ -1171,8 +1203,7 @@ dlg:button {
             local orientation <const> = pi * 1.5
 
             if rings > 1 then
-                drawPolygon(
-                    context,
+                drawPolygon(context,
                     xCenter, yCenter,
                     dimScale * halfEdge,
                     yCorrect * halfEdge,
@@ -1195,11 +1226,8 @@ dlg:button {
                 while j < jMax do
                     j = j + 1
 
-                    local x <const> = xCenter + iExt + j * xHalfExt
-                    local y <const> = yCenter + j * yRad1_5
-                    drawPolygon(
-                        context,
-                        x, y,
+                    drawPolygon(context,
+                        xCenter + iExt + j * xHalfExt, yCenter + j * yRad1_5,
                         xRadius, yRadius,
                         6, orientation,
                         strokeColor, strokeWeight,
@@ -1311,8 +1339,7 @@ dlg:button {
                     local t <const> = i * toFac
                     local y <const> = (1.0 - t) * yOrig + t * yDest
 
-                    drawEllipse(
-                        context,
+                    drawEllipse(context,
                         xCenter, y,
                         xMinRadius, yMinRadius,
                         strokeColor, strokeWeight,
@@ -1330,8 +1357,7 @@ dlg:button {
                     local xr <const> = u * xMinRadius + t * xMaxRadius
                     local yr <const> = u * yMinRadius + t * yMaxRadius
 
-                    drawEllipse(
-                        context,
+                    drawEllipse(context,
                         xCenter, yOrig + yMinRadius - yr,
                         xr, yr,
                         strokeColor, strokeWeight,
@@ -1349,8 +1375,7 @@ dlg:button {
                     local xr <const> = u * xMinRadius + t * xMaxRadius
                     local yr <const> = u * yMinRadius + t * yMaxRadius
 
-                    drawEllipse(
-                        context,
+                    drawEllipse(context,
                         xCenter, yDest - yMinRadius + yr,
                         xr, yr,
                         strokeColor, strokeWeight,
@@ -1420,8 +1445,8 @@ dlg:button {
                     local sinTheta <const> = sin(theta)
 
                     drawLine(context,
-                        xCenter + 0 * cosTheta,
-                        yCenter + 0 * sinTheta,
+                        xCenter + 0.0 * cosTheta,
+                        yCenter + 0.0 * sinTheta,
                         xCenter + xMaxRadius * cosTheta,
                         yCenter + yMaxRadius * sinTheta,
                         strokeColor, strokeWeight)
@@ -1525,8 +1550,7 @@ dlg:button {
             local yRadius <const> = yCorrect * shortEdge * 0.25
 
             -- Center circle
-            drawEllipse(
-                context,
+            drawEllipse(context,
                 xCenter, yCenter,
                 xRadius, yRadius,
                 strokeColor, strokeWeight,
@@ -1535,16 +1559,10 @@ dlg:button {
             local i = 0
             while i < 6 do
                 local theta <const> = tau * i / 6.0 - angOffsetRad
-                local cosTheta <const> = cos(theta)
-                local sinTheta <const> = sin(theta)
-                local rct <const> = xRadius * cosTheta
-                local rst <const> = yRadius * sinTheta
-                local xc <const> = xCenter + rct
-                local yc <const> = yCenter + rst
 
-                drawEllipse(
-                    context,
-                    xc, yc,
+                drawEllipse(context,
+                    xCenter + xRadius * cos(theta),
+                    yCenter + yRadius * sin(theta),
                     xRadius, yRadius,
                     strokeColor, strokeWeight,
                     useAntialiasVerif)
