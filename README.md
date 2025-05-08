@@ -28,6 +28,10 @@ Many diagrams were influenced by [Zak Korvin](https://www.youtube.com/@ZKorvin)'
 
 The script supports the creation of the following diagrams:
 
+![Arcs](arcs.png)
+
+Arcs
+
 ![Dimetric Grid](dimetricGrid.png)
 
 Dimetric Grid
