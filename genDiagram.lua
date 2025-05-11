@@ -856,6 +856,19 @@ dlg:button {
         local colorMode <const> = spriteSpec.colorMode
 
         local image <const> = Image(spriteSpec)
+
+        local ctxAvail <const> = pcall(function() return image.context end)
+        if not ctxAvail then
+            app.alert {
+                title = "Error",
+                text = {
+                    "Drawing canvas is not available.",
+                    "Check your version of Aseprite.",
+                }
+            }
+            return
+        end
+
         local context <const> = image.context
         if not context then
             app.alert {
@@ -1743,6 +1756,17 @@ dlg:button {
         end
 
         app.transaction("Diagram", function()
+            -- TODO: Offer option to create a reference layer?
+            -- app.command.NewLayer {
+            --     name = "Reference",
+            --     reference = true,
+            -- }
+            -- local refLayer <const> = app.layer
+
+            -- if refLayer == nil
+            --     or (not refLayer.isReference) then
+            --     return
+            -- end
             local gridLayer <const> = sprite:newLayer()
 
             -- There could be an option to choose active or range frames
