@@ -2,7 +2,7 @@
 
 ![Screen Cap](screenCap.png)
 
-This is a diagram generator for use with the [Aseprite](https://www.aseprite.org/) [scripting API](https://github.com/aseprite/api). At time of writing, it requires Aseprite beta to work, available either through Steam or compiled from [Github](https://github.com/aseprite/aseprite/tree/beta). Any version since that supports acquiring a graphics context from an image will work.
+This is a diagram generator for use with the [Aseprite](https://www.aseprite.org/) [scripting API](https://github.com/aseprite/api). At time of writing, it requires Aseprite [beta](https://aseprite.org/beta) to work, available either through Steam or compiled from [Github](https://github.com/aseprite/aseprite/tree/beta). Any version since that supports acquiring a graphics context from an image will work.
 
 ## Download
 
