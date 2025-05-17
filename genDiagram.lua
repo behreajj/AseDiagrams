@@ -915,7 +915,8 @@ dlg:button {
         end
 
         local activeTool <const> = app.tool
-        if activeTool.id == "slice" then
+        if activeTool.id == "slice"
+            or activeTool.id == "text" then
             app.tool = "hand"
         end
 
