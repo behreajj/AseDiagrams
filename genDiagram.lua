@@ -45,6 +45,7 @@ local defaults <const> = {
     strokeAbgr32 = 0xffffffff,
     useAntialias = true,
     useTrimAlpha = true,
+    useRefLayer = false,
     layerPlace = "BOTTOM",
 
     xOffset = 0,
@@ -788,6 +789,16 @@ dlg:check {
 
 dlg:newrow { always = false }
 
+dlg:check {
+    id = "useRefLayer",
+    text = "Reference",
+    selected = defaults.useRefLayer,
+    visible = true,
+    focus = false,
+}
+
+dlg:newrow { always = false }
+
 dlg:combobox {
     id = "layerPlace",
     label = "Layer:",
@@ -891,6 +902,7 @@ dlg:button {
             or abgr32ToAseColor(defaults.strokeAbgr32) --[[@as Color]]
         local useAntialias <const> = args.useAntialias --[[@as boolean]]
         local useTrimAlpha <const> = args.useTrimAlpha --[[@as boolean]]
+        local useRefLayer <const> = args.useRefLayer --[[@as boolean]]
         local layerPlace <const> = args.layerPlace
             or defaults.layerPlace --[[@as string]]
 
@@ -1756,18 +1768,17 @@ dlg:button {
         end
 
         app.transaction("Diagram", function()
-            -- TODO: Offer option to create a reference layer?
-            -- app.command.NewLayer {
-            --     name = "Reference",
-            --     reference = true,
-            -- }
-            -- local refLayer <const> = app.layer
-
-            -- if refLayer == nil
-            --     or (not refLayer.isReference) then
-            --     return
-            -- end
-            local gridLayer <const> = sprite:newLayer()
+            local gridLayer = nil
+            if useRefLayer then
+                app.command.NewLayer { reference = true }
+                gridLayer = app.layer
+                if gridLayer == nil
+                    or (not gridLayer.isReference) then
+                    gridLayer = sprite:newLayer()
+                end
+            else
+                gridLayer = sprite:newLayer()
+            end
 
             -- There could be an option to choose active or range frames
             -- instead of all. However, the control flow for this is finicky.
